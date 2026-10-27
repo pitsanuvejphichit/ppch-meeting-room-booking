@@ -11,6 +11,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 function doGet(e) {
   // ตรวจสอบและอัปเดตหัวตารางของแผ่นงาน Bookings โดยอัตโนมัติเมื่อมีการเรียกหน้าเว็บแอป
   ensureCorrectHeaders();
+  syncBookingsFromSupabaseToSheet();
 
   // รองรับ REST API สำหรับ External Client / GitHub Pages
   const action = (e && e.parameter && e.parameter.action) || '';
@@ -118,6 +119,60 @@ function getSpreadsheet() {
  * ตรวจสอบและอัปเดตหัวตาราง (Headers) ของแผ่นงาน Bookings ให้เป็น 15 คอลัมน์ที่ใช้งานจริง
  * และลบคอลัมน์ที่ไม่จำเป็นออกทั้งหมด
  */
+/**
+ * ดึงข้อมูลการจองจำลองและข้อมูลจริงจาก Supabase มาบันทึกลง Google Sheet
+ */
+function syncBookingsFromSupabaseToSheet() {
+  try {
+    const ss = getSpreadsheet();
+    let sheet = ss.getSheetByName('Bookings');
+    if (!sheet) {
+      initDatabase();
+      sheet = ss.getSheetByName('Bookings');
+    }
+    if (!sheet) return;
+
+    // หากมีข้อมูลแล้วเกิน 10 แถว แสดงว่ามีข้อมูลพร้อมแล้ว
+    if (sheet.getLastRow() > 10) return;
+
+    const url = SUPABASE_URL + '/rest/v1/room_bookings?order=booking_date.asc,start_time.asc';
+    const res = UrlFetchApp.fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      },
+      muteHttpExceptions: true
+    });
+    const data = JSON.parse(res.getContentText());
+    if (data && data.length > 0) {
+      const rows = data.map(b => [
+        String(b.booking_no || b.booking_id || ''),
+        b.created_at || new Date().toISOString(),
+        String(b.room_name || ''),
+        String(b.booking_date || ''),
+        String((b.start_time || '').substring(0, 5)),
+        String((b.end_time || '').substring(0, 5)),
+        String(b.requester_name || b.booked_by || ''),
+        String(b.department || ''),
+        String(b.phone || '-'),
+        String(b.topic || b.purpose || ''),
+        String(b.meeting_type || 'ภายใน'),
+        Number(b.attendees_count || 10),
+        Array.isArray(b.equipment) ? b.equipment.join(', ') : String(b.equipment || ''),
+        String(b.room_layout || 'ห้องเรียน'),
+        String(b.status || 'จองเรียบร้อย')
+      ]);
+
+      // ฟอร์แมตคอลัมน์ A (Booking ID) และ D (Booking Date) เป็น Plain Text
+      const startRow = sheet.getLastRow() + 1;
+      sheet.getRange(startRow, 1, rows.length, 15).setValues(rows);
+      Logger.log('Synced ' + rows.length + ' bookings from Supabase to Google Sheet.');
+    }
+  } catch (err) {
+    Logger.log('syncBookingsFromSupabaseToSheet error: ' + err.toString());
+  }
+}
+
 function ensureCorrectHeaders() {
   try {
     const ss = getSpreadsheet();

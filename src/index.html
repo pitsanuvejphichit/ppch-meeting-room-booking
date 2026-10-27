@@ -246,25 +246,46 @@
 
         <!-- CENTER FULL MAIN CALENDAR GRID VIEW (หน้าแรกปฏิทินเดือน) -->
         <div id="dtMainCalGridView" class="bg-white rounded-2xl p-6 border border-slate-200 space-y-4 shadow-sm">
-          <div class="flex justify-between items-center border-b border-slate-200 pb-3">
-            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-calendar-week text-cyan-600"></i>
-              <span>ผังปฏิทินประจำเดือน (คลิกเลือกวันที่ต้องการดูรายละเอียดและจอง)</span>
+          <div class="flex flex-wrap justify-between items-center border-b border-slate-200 pb-3 gap-3">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-calendar-week text-cyan-700 text-base"></i>
+              <span>ผังปฏิทินประจำเดือน (คลิกเลือกวันที่เพื่อดูรายละเอียดและจอง)</span>
             </h3>
-            <div class="flex items-center space-x-4 text-xs font-semibold">
-              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-600"></span><span class="text-slate-600">รายการจอง</span></div>
+            <!-- Room Color Legend (สัญลักษณ์สีห้องประชุม - High Contrast) -->
+            <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+              <span class="text-slate-400 font-semibold text-[11px] mr-0.5">สีห้องประชุม:</span>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-300 text-sky-950 shadow-2xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
+                <span>ห้องใหญ่ (ชั้น 5)</span>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950 shadow-2xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                <span>ห้องม่าน (ชั้น 5)</span>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 border border-purple-300 text-purple-950 shadow-2xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                <span>ห้องกระจก (ชั้น 5)</span>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-950 shadow-2xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+                <span>ชั้น 6</span>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-300 text-rose-950 shadow-2xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+                <span>VIP3 (ชั้น 5)</span>
+              </div>
             </div>
           </div>
 
-          <!-- Day Headers -->
-          <div class="grid grid-cols-7 text-center font-bold text-xs text-slate-600 py-1">
-            <div class="text-red-500">อาทิตย์</div>
-            <div>จันทร์</div>
-            <div>อังคาร</div>
-            <div>พุธ</div>
-            <div>พฤหัสบดี</div>
-            <div>ศุกร์</div>
-            <div class="text-blue-500">เสาร์</div>
+          <!-- Day Headers (High Contrast Colorful Header Pills) -->
+          <div class="grid grid-cols-7 gap-3 text-center text-xs font-bold py-1">
+            <div class="bg-rose-100 text-rose-800 border border-rose-300 py-2 rounded-xl shadow-2xs">อาทิตย์</div>
+            <div class="bg-amber-100 text-amber-900 border border-amber-300 py-2 rounded-xl shadow-2xs">จันทร์</div>
+            <div class="bg-pink-100 text-pink-900 border border-pink-300 py-2 rounded-xl shadow-2xs">อังคาร</div>
+            <div class="bg-emerald-100 text-emerald-900 border border-emerald-300 py-2 rounded-xl shadow-2xs">พุธ</div>
+            <div class="bg-orange-100 text-orange-900 border border-orange-300 py-2 rounded-xl shadow-2xs">พฤหัสบดี</div>
+            <div class="bg-sky-100 text-sky-900 border border-sky-300 py-2 rounded-xl shadow-2xs">ศุกร์</div>
+            <div class="bg-purple-100 text-purple-900 border border-purple-300 py-2 rounded-xl shadow-2xs">เสาร์</div>
           </div>
           
           <!-- 7-Column Big Main Calendar Grid -->
@@ -1527,15 +1548,82 @@
         });
         const hasBookings = dayBookings.length > 0;
 
+        let dotsHtml = '';
+        if (hasBookings) {
+          const roomDots = dayBookings.slice(0, 3).map(b => {
+            const s = getRoomBadgeStyle(b.roomName);
+            return `<span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : s.dot}"></span>`;
+          }).join('');
+          dotsHtml = `<div class="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5 z-10">${roomDots}</div>`;
+        }
+
         const dayBtn = document.createElement('button');
-        dayBtn.className = `cal-day-btn relative ${isSelected ? 'cal-day-selected' : 'text-slate-700 hover:bg-slate-200'}`;
+        dayBtn.className = `cal-day-btn relative ${isSelected ? 'cal-day-selected' : 'text-slate-800 hover:bg-slate-200'}`;
         dayBtn.innerHTML = `
-          <span class="relative z-10">${day}</span>
-          ${hasBookings ? `<span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full z-10 ${isSelected ? 'bg-white' : 'bg-emerald-500'}"></span>` : ''}
+          <span class="relative z-10 font-bold">${day}</span>
+          ${dotsHtml}
         `;
         dayBtn.onclick = () => selectDate(dateStr, true);
 
         container.appendChild(dayBtn);
+      }
+    }
+
+    /**
+     * ดึงโทนสีประจำห้องประชุม (High-Contrast Theme Colors)
+     */
+    function getRoomBadgeStyle(roomName) {
+      const r = String(roomName || '');
+      if (r.includes('ใหญ่')) {
+        return {
+          bar: 'border-l-sky-600',
+          bg: 'bg-sky-50/95 hover:bg-sky-100',
+          border: 'border-sky-300',
+          text: 'text-sky-950',
+          timeBg: 'bg-sky-600 text-white',
+          badgeBg: 'bg-sky-100 text-sky-900 border-sky-300',
+          dot: 'bg-sky-600'
+        };
+      } else if (r.includes('ม่าน')) {
+        return {
+          bar: 'border-l-emerald-600',
+          bg: 'bg-emerald-50/95 hover:bg-emerald-100',
+          border: 'border-emerald-300',
+          text: 'text-emerald-950',
+          timeBg: 'bg-emerald-600 text-white',
+          badgeBg: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+          dot: 'bg-emerald-600'
+        };
+      } else if (r.includes('กระจก')) {
+        return {
+          bar: 'border-l-purple-600',
+          bg: 'bg-purple-50/95 hover:bg-purple-100',
+          border: 'border-purple-300',
+          text: 'text-purple-950',
+          timeBg: 'bg-purple-600 text-white',
+          badgeBg: 'bg-purple-100 text-purple-900 border-purple-300',
+          dot: 'bg-purple-600'
+        };
+      } else if (r.includes('ชั้น 6')) {
+        return {
+          bar: 'border-l-amber-600',
+          bg: 'bg-amber-50/95 hover:bg-amber-100',
+          border: 'border-amber-400',
+          text: 'text-amber-950',
+          timeBg: 'bg-amber-600 text-white',
+          badgeBg: 'bg-amber-100 text-amber-950 border-amber-300',
+          dot: 'bg-amber-600'
+        };
+      } else {
+        return {
+          bar: 'border-l-rose-600',
+          bg: 'bg-rose-50/95 hover:bg-rose-100',
+          border: 'border-rose-300',
+          text: 'text-rose-950',
+          timeBg: 'bg-rose-600 text-white',
+          badgeBg: 'bg-rose-100 text-rose-900 border-rose-300',
+          dot: 'bg-rose-600'
+        };
       }
     }
 
@@ -1549,7 +1637,7 @@
 
       for (let i = 0; i < firstDay; i++) {
         const empty = document.createElement('div');
-        empty.className = 'min-h-[100px] bg-slate-50/60 rounded-2xl border border-slate-100 p-2';
+        empty.className = 'min-h-[125px] bg-slate-100/60 rounded-2xl border border-dashed border-slate-300/70 p-2';
         container.appendChild(empty);
       }
 
@@ -1564,37 +1652,58 @@
         const dayBookings = overviewBookings.filter(b => b.bookingDate === dateStr);
 
         const cell = document.createElement('div');
-        cell.className = `min-h-[105px] p-2.5 rounded-2xl border transition cursor-pointer flex flex-col justify-between relative group ${
-          isSelected ? 'bg-cyan-50/90 border-cyan-500 shadow-md ring-2 ring-cyan-500/20' : 'bg-white border-slate-200 hover:border-cyan-300 hover:shadow-sm'
+        cell.className = `min-h-[125px] p-3 rounded-2xl border-2 transition-all duration-150 cursor-pointer flex flex-col justify-between relative group shadow-2xs ${
+          isSelected 
+            ? 'bg-cyan-50/80 border-cyan-600 shadow-md ring-4 ring-cyan-500/20' 
+            : (isToday 
+                ? 'bg-sky-50/40 border-cyan-400 hover:border-cyan-600 hover:shadow-md' 
+                : 'bg-white border-slate-200 hover:border-cyan-500 hover:shadow-md')
         }`;
         cell.onclick = () => selectDate(dateStr, true);
 
         let badgesHTML = '';
         let tooltipHTML = '';
-        
+
         if (dayBookings.length > 0) {
           const visible = dayBookings.slice(0, 2);
           visible.forEach(b => {
-            const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
+            const style = getRoomBadgeStyle(b.roomName);
+            const shortRoom = b.roomName.replace('ห้องประชุมชั้น ', 'ชั้น ').replace('ห้องประชุม ', '');
+            const what = b.purpose || b.topic || b.bookedBy || b.requester_name || 'ประชุม';
+            const sTime = (b.startTime || '').substring(0, 5);
+            const eTime = (b.endTime || '').substring(0, 5);
+
             badgesHTML += `
-              <div class="text-[10px] font-semibold ${isApproved ? 'bg-cyan-100 text-cyan-900 border border-cyan-200' : 'bg-amber-100 text-amber-900 border border-amber-300 font-bold'} px-2 py-0.5 rounded-lg truncate" title="${b.startTime}-${b.endTime} | ${b.roomName}: ${b.bookedBy}">
-                ${b.startTime}-${b.endTime} น. ${b.roomName.replace('ห้องประชุมชั้น ', 'ชั้น ').replace('ห้องประชุม ', 'ชั้น ')}
+              <div class="border-l-[4px] ${style.bar} ${style.bg} border ${style.border} p-1.5 rounded-lg shadow-2xs space-y-0.5 text-left transition-all">
+                <div class="flex items-center justify-between gap-1 leading-none">
+                  <span class="${style.timeBg} px-1.5 py-0.5 rounded text-[9.5px] font-bold font-mono tracking-tight shrink-0">${sTime}-${eTime}</span>
+                  <span class="text-[9.5px] font-bold text-slate-700 truncate">${shortRoom}</span>
+                </div>
+                <div class="text-[10.5px] font-bold truncate text-slate-900 leading-tight mt-0.5" title="${what}">${what}</div>
               </div>
             `;
           });
+
           if (dayBookings.length > 2) {
-            badgesHTML += `<div class="text-[9px] font-bold text-slate-500 pl-1">+ อีก ${dayBookings.length - 2} รายการ</div>`;
+            badgesHTML += `
+              <div class="text-[9.5px] font-bold text-cyan-800 bg-cyan-100/90 border border-cyan-300 py-0.5 px-2 rounded-md text-center shadow-2xs">
+                + อีก ${dayBookings.length - 2} รายการ (คลิกดู)
+              </div>
+            `;
           }
 
-          // Build custom hover tooltip
+          // Hover Tooltip
           const listItems = dayBookings.map(b => {
+            const style = getRoomBadgeStyle(b.roomName);
             const who = b.bookedBy || b.requester_name || '-';
             const what = b.purpose || b.topic || '-';
             const dept = b.department || '-';
+            const sTime = (b.startTime || '').substring(0, 5);
+            const eTime = (b.endTime || '').substring(0, 5);
             return `
-              <div class="border-l-2 border-cyan-400 pl-2 text-left space-y-0.5">
+              <div class="border-l-3 ${style.bar} pl-2 text-left space-y-0.5 bg-slate-900/60 p-1.5 rounded-r-lg">
                 <div class="font-bold text-white text-[11px]">${b.roomName}</div>
-                <div class="text-[10px] text-cyan-300 font-mono font-bold">⏰ ${b.startTime} - ${b.endTime} น.</div>
+                <div class="text-[10px] text-cyan-300 font-mono font-bold">⏰ ${sTime} - ${eTime} น.</div>
                 <div class="text-[9.5px] text-slate-200">👤 ผู้ขอใช้: <strong class="text-white">${who}</strong> (${dept})</div>
                 <div class="text-[9.5px] text-slate-300">📝 หัวข้อ: <strong class="text-cyan-200">${what}</strong></div>
               </div>
@@ -1602,27 +1711,29 @@
           }).join('');
 
           tooltipHTML = `
-            <div class="hidden group-hover:flex flex-col gap-2 absolute bottom-[105%] left-1/2 -translate-x-1/2 w-64 p-3.5 bg-slate-950/95 border border-slate-800 text-white rounded-xl shadow-xl z-50 pointer-events-none text-left backdrop-blur-xs">
-              <div class="font-bold text-xs border-b border-slate-800 pb-1.5 mb-0.5 text-cyan-400 flex items-center gap-1.5">
+            <div class="hidden group-hover:flex flex-col gap-2 absolute bottom-[105%] left-1/2 -translate-x-1/2 w-64 p-3.5 bg-slate-950/95 border border-slate-700 text-white rounded-xl shadow-2xl z-50 pointer-events-none text-left backdrop-blur-md">
+              <div class="font-bold text-xs border-b border-slate-700 pb-1.5 mb-0.5 text-cyan-400 flex items-center gap-1.5">
                 <i class="fa-solid fa-list-check"></i> รายการจองวันที่ ${day} ${monthNamesThai[calMonth]}
               </div>
-              <div class="space-y-2.5 max-h-48 overflow-y-auto custom-scrollbar">${listItems}</div>
+              <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">${listItems}</div>
             </div>
           `;
-        } else {
-          badgesHTML = `<div class="text-[10px] text-slate-300 font-medium italic pl-0.5">ว่าง</div>`;
         }
 
         cell.innerHTML = `
           <div class="flex justify-between items-center mb-1">
-            <span class="text-xs font-bold ${isToday ? 'bg-cyan-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-2xs' : (dayOfWeek === 0 ? 'text-red-500' : (dayOfWeek === 6 ? 'text-blue-500' : 'text-slate-800'))}">
+            <span class="text-xs font-bold ${
+              isToday 
+                ? 'w-7 h-7 rounded-full bg-cyan-700 text-white font-black flex items-center justify-center shadow-xs text-xs' 
+                : (dayOfWeek === 0 ? 'text-rose-600 font-black text-sm' : (dayOfWeek === 6 ? 'text-blue-600 font-black text-sm' : 'text-slate-800 font-black text-sm'))
+            }">
               ${day}
             </span>
-            <button onclick="event.stopPropagation(); selectDate('${dateStr}'); quickBook('', '09:00', '10:00');" class="w-5 h-5 rounded-full hover:bg-cyan-100 text-slate-400 hover:text-cyan-700 flex items-center justify-center text-xs transition" title="จองสำหรับวันนี้">
+            <button onclick="event.stopPropagation(); selectDate('${dateStr}'); quickBook('', '09:00', '10:00');" class="w-6 h-6 rounded-full bg-slate-100 hover:bg-cyan-600 hover:text-white text-slate-500 flex items-center justify-center text-xs transition shadow-2xs" title="จองสำหรับวันนี้">
               <i class="fa-solid fa-plus text-[10px]"></i>
             </button>
           </div>
-          <div class="space-y-1 my-auto">${badgesHTML}</div>
+          <div class="space-y-1 my-auto w-full">${badgesHTML}</div>
           ${tooltipHTML}
         `;
 
@@ -2597,88 +2708,87 @@
       const listHtml = bookings && bookings.length > 0
         ? bookings.map(b => {
             const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
+            const style = getRoomBadgeStyle(b.roomName);
+            const who = b.bookedBy || b.requester_name || '-';
+            const what = b.purpose || b.topic || '-';
+            const dept = b.department || '-';
+            const sTime = (b.startTime || '').substring(0, 5);
+            const eTime = (b.endTime || '').substring(0, 5);
+            const layout = b.seatingLayout || b.room_layout || 'ห้องเรียน (Classroom)';
+            const att = b.attendees || b.attendees_count || '-';
+
             return `
-              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center hover:bg-slate-100/80 transition">
-                <div class="flex items-center space-x-4">
-                  <div class="text-center bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs min-w-[120px]">
-                    <div class="text-xs font-mono font-bold text-cyan-700">${b.startTime} - ${b.endTime} น.</div>
+              <div class="p-4 bg-white border border-slate-300 border-l-[6px] ${style.bar} rounded-2xl flex justify-between items-center hover:bg-slate-50/80 shadow-2xs transition gap-4 flex-wrap sm:flex-nowrap">
+                <div class="flex items-start sm:items-center space-x-4">
+                  <div class="text-center px-3.5 py-2.5 rounded-xl ${style.timeBg} shadow-xs min-w-[125px] shrink-0">
+                    <div class="text-xs font-mono font-bold">${sTime} - ${eTime} น.</div>
+                    <div class="text-[10px] font-medium opacity-90">เวลาใช้งาน</div>
                   </div>
-                  <div>
-                    <h4 class="font-bold text-slate-900 text-sm">${b.roomName}</h4>
-                    <p class="text-xs text-slate-500 mt-0.5">👤 <strong>ผู้ขอใช้:</strong> <span class="font-bold text-slate-800">${b.bookedBy || b.requester_name || '-'}</span> (${b.department || '-'}) | 📝 <strong>หัวข้อ:</strong> <span class="font-bold text-slate-800">${b.purpose || b.topic || '-'}</span> | 🪑 <strong>ผังจัดห้อง:</strong> ${b.seatingLayout || b.room_layout || 'นักเรียน'}</p>
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="${style.badgeBg} border px-2.5 py-0.5 rounded-md text-xs font-bold">${b.roomName}</span>
+                      <span class="text-xs text-slate-500 font-medium">👥 ผู้เข้าร่วม: <strong class="text-slate-800">${att} คน</strong></span>
+                      <span class="text-xs text-slate-500 font-medium">🪑 ผัง: <strong class="text-slate-800">${layout}</strong></span>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                      <span class="text-slate-500 font-normal">หัวข้อ:</span>
+                      <span class="text-slate-900 font-bold">${what}</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">
+                      <span>ผู้ขอจอง:</span> <strong class="text-slate-800">${who}</strong>
+                      <span class="mx-1.5 text-slate-300">•</span>
+                      <span>หน่วยงาน:</span> <strong class="text-cyan-800">${dept}</strong>
+                    </p>
                   </div>
                 </div>
-                <span class="px-3 py-1 rounded-full text-xs font-bold ${isApproved ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs' : 'bg-amber-50 text-amber-700 border border-amber-200 font-bold'}">${isApproved ? 'จองเรียบร้อย' : b.status}</span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                    isApproved 
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs' 
+                      : 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
+                  }">
+                    ${isApproved ? '✓ จองเรียบร้อย' : b.status}
+                  </span>
+                </div>
               </div>
             `;
           }).join('')
-        : `<div class="text-center py-6 text-slate-400 text-xs font-semibold">ยังไม่มีการจองในวันนี้ (ห้องว่างตลอดวัน)</div>`;
+        : `
+          <div class="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-slate-400 text-sm font-semibold">
+            <i class="fa-regular fa-calendar-check text-4xl mb-2 text-slate-300 block"></i>
+            ยังไม่มีการจองห้องประชุมในวันนี้ (ห้องว่างทุกห้อง)
+          </div>
+        `;
 
       if (dtList) dtList.innerHTML = listHtml;
 
       const mbListHtml = bookings && bookings.length > 0
         ? bookings.map(b => {
             const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
+            const style = getRoomBadgeStyle(b.roomName);
+            const who = b.bookedBy || b.requester_name || '-';
+            const what = b.purpose || b.topic || '-';
+            const dept = b.department || '-';
+            const sTime = (b.startTime || '').substring(0, 5);
+            const eTime = (b.endTime || '').substring(0, 5);
+
             return `
-              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+              <div class="p-3 bg-white border border-slate-300 border-l-[5px] ${style.bar} rounded-xl space-y-2 text-xs shadow-2xs">
                 <div class="flex justify-between items-center">
-                  <span class="font-bold text-cyan-700 font-mono">${b.startTime} - ${b.endTime} น.</span>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isApproved ? 'bg-cyan-600 text-white shadow-2xs' : 'bg-amber-400 text-slate-900'}">${b.status}</span>
+                  <span class="font-bold text-white ${style.timeBg} px-2 py-0.5 rounded text-[10px] font-mono">${sTime} - ${eTime} น.</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isApproved ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-900'}">${b.status}</span>
                 </div>
-                <div class="text-slate-800 font-bold">${b.roomName}</div>
-                <div class="text-[11px] text-slate-500 space-y-0.5">
-                  <div>👤 ผู้ขอใช้: <strong class="text-slate-800">${b.bookedBy || b.requester_name || '-'}</strong> (${b.department || '-'})</div>
-                  <div>📝 หัวข้อ: <strong class="text-slate-800">${b.purpose || b.topic || '-'}</strong></div>
-                  <div>🪑 ผังห้อง: ${b.seatingLayout || b.room_layout || 'นักเรียน'}</div>
+                <div class="text-slate-900 font-bold">${b.roomName}</div>
+                <div class="text-[11px] text-slate-600 space-y-0.5">
+                  <div>📝 หัวข้อ: <strong class="text-slate-900">${what}</strong></div>
+                  <div>👤 ผู้ขอใช้: <strong class="text-slate-800">${who}</strong> (${dept})</div>
                 </div>
               </div>
             `;
           }).join('')
-        : `<div class="text-center py-4 text-slate-400 text-xs font-semibold">ยังไม่มีการจองในวันนี้ (ห้องว่างตลอดวัน)</div>`;
+        : `<div class="text-center py-6 text-slate-400 text-xs font-semibold">ยังไม่มีการจองในวันนี้ (ห้องว่างตลอดวัน)</div>`;
 
       if (mbList) mbList.innerHTML = mbListHtml;
-    }
-
-    function fetchPublicData(dateStr, callback) {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(res => {
-            if (res && res.bookings) {
-              const allBk = [...res.bookings];
-              overviewBookings.forEach(ob => {
-                if (ob.bookingDate === dateStr && !allBk.some(b => b.id === ob.id)) {
-                  allBk.push(ob);
-                }
-              });
-              res.bookings = allBk;
-            }
-            const roomsToUse = (res && res.rooms && res.rooms.length > 0) ? res.rooms : defaultRoomsList;
-            callback({
-              success: true,
-              selectedDate: dateStr,
-              rooms: roomsToUse,
-              bookings: (res && res.bookings) ? res.bookings : overviewBookings.filter(b => b.bookingDate === dateStr)
-            });
-          })
-          .withFailureHandler(err => {
-            console.error('fetchPublicData failure:', err);
-            callback({
-              success: true,
-              rooms: defaultRoomsList,
-              bookings: overviewBookings.filter(b => b.bookingDate === dateStr)
-            });
-          })
-          .getPublicData(dateStr);
-      } else {
-        setTimeout(() => {
-          const bookingsForDate = overviewBookings.filter(b => b.bookingDate === dateStr);
-          callback({
-            success: true,
-            rooms: defaultRoomsList,
-            bookings: bookingsForDate
-          });
-        }, 300);
-      }
     }
 
     function scrollToBookingForm() {
