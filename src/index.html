@@ -1457,23 +1457,29 @@
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
-      autoDetectDeviceAndRender();
-      window.addEventListener('resize', autoDetectDeviceAndRender);
-
-      startClock();
-      renderCalendar();
-      selectDate(selectedDateStr);
-      loadOverviewData();
-
-      // Safety timeout to dismiss loading overlay after 5 seconds in case of network issues
+      // Safety timeout to ensure loading overlay always dismisses even on network lag
       setTimeout(() => {
         const loader = document.getElementById('loading');
         if (loader) {
-          loader.style.transition = 'opacity 0.4s ease';
+          loader.style.transition = 'opacity 0.3s ease';
           loader.style.opacity = '0';
-          setTimeout(() => loader.remove(), 400);
+          setTimeout(() => loader.remove(), 300);
         }
-      }, 5000);
+      }, 1500);
+
+      try {
+        autoDetectDeviceAndRender();
+        window.addEventListener('resize', autoDetectDeviceAndRender);
+
+        startClock();
+        renderCalendar();
+        selectDate(selectedDateStr);
+        loadOverviewData();
+      } catch (err) {
+        console.error('Initialization error:', err);
+        const loader = document.getElementById('loading');
+        if (loader) loader.remove();
+      }
     });
 
     /**
@@ -2789,6 +2795,49 @@
         : `<div class="text-center py-6 text-slate-400 text-xs font-semibold">ยังไม่มีการจองในวันนี้ (ห้องว่างตลอดวัน)</div>`;
 
       if (mbList) mbList.innerHTML = mbListHtml;
+    }
+
+    
+    function fetchPublicData(dateStr, callback) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            if (res && res.bookings) {
+              const allBk = [...res.bookings];
+              overviewBookings.forEach(ob => {
+                if (ob.bookingDate === dateStr && !allBk.some(b => b.id === ob.id)) {
+                  allBk.push(ob);
+                }
+              });
+              res.bookings = allBk;
+            }
+            const roomsToUse = (res && res.rooms && res.rooms.length > 0) ? res.rooms : defaultRoomsList;
+            callback({
+              success: true,
+              selectedDate: dateStr,
+              rooms: roomsToUse,
+              bookings: (res && res.bookings) ? res.bookings : overviewBookings.filter(b => b.bookingDate === dateStr)
+            });
+          })
+          .withFailureHandler(err => {
+            console.error('fetchPublicData failure:', err);
+            callback({
+              success: true,
+              rooms: defaultRoomsList,
+              bookings: overviewBookings.filter(b => b.bookingDate === dateStr)
+            });
+          })
+          .getPublicData(dateStr);
+      } else {
+        setTimeout(() => {
+          const bookingsForDate = overviewBookings.filter(b => b.bookingDate === dateStr);
+          callback({
+            success: true,
+            rooms: defaultRoomsList,
+            bookings: bookingsForDate
+          });
+        }, 100);
+      }
     }
 
     function scrollToBookingForm() {
