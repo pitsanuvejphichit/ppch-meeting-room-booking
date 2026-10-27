@@ -5,6 +5,16 @@
 
 ---
 
+## 🔗 ลิงก์และแหล่งข้อมูลระบบ (Quick Access)
+
+- **GitHub Repository**: [https://github.com/pitsanuvejphichit/ppch-meeting-room-booking](https://github.com/pitsanuvejphichit/ppch-meeting-room-booking)
+- **GitHub Pages (Live App)**: [https://pitsanuvejphichit.github.io/ppch-meeting-room-booking/](https://pitsanuvejphichit.github.io/ppch-meeting-room-booking/)
+- **Google Apps Script Web App**: [https://script.google.com/macros/s/AKfycbxGmA9Cl_rco-I7xHm_K1leef44nZbrDDNddxJaE-FQrakME21e5QZ3xB282r4hpC9m/exec](https://script.google.com/macros/s/AKfycbxGmA9Cl_rco-I7xHm_K1leef44nZbrDDNddxJaE-FQrakME21e5QZ3xB282r4hpC9m/exec)
+- **Google Sheet Database**: [Google Sheet ID: 1WAykM8JPdgX43S219hBNOB1Eq-jWgT91Zc3jtng3YL4](https://docs.google.com/spreadsheets/d/1WAykM8JPdgX43S219hBNOB1Eq-jWgT91Zc3jtng3YL4/edit)
+- **LINE Official Notification**: เชื่อมต่อผ่าน LINE Messaging API ส่งแจ้งเตือนอัตโนมัติทันทีที่มีการจองห้องสำเร็จ
+
+---
+
 ## 🏛️ จุดเด่นและสถาปัตยกรรมระบบ
 
 1. **Dual-Platform First (Smart Auto-detect Router)**:
