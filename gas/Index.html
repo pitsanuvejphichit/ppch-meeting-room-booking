@@ -2662,125 +2662,116 @@
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
-    function initRowSlider(row, isMobile = false) {
+    const TIME_SLOTS_30M = [
+      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+      '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+      '17:00', '17:30', '18:00'
+    ];
+
+    const ALL_DROPDOWN_HOURS = [
+      '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+      '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+      '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+      '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+      '19:00', '19:30', '20:00'
+    ];
+
+    function initTimeSlotsGrid(row, isMobile = false) {
       const prefix = isMobile ? 'mb-' : '';
-      const minHandle = row.querySelector('.min-handle');
-      const maxHandle = row.querySelector('.max-handle');
-      const activeTrack = row.querySelector('.active-track');
-      const busyTrack = row.querySelector('.busy-track');
-      const track = row.querySelector('.slider-track').parentElement;
-      
       const dateInput = row.querySelector('.' + prefix + 'row-date');
       const startTimeInput = row.querySelector('.' + prefix + 'row-start-time');
       const endTimeInput = row.querySelector('.' + prefix + 'row-end-time');
-      const slotSizeInput = row.querySelector('.' + prefix + 'row-slot-size');
       const display = row.querySelector('.' + prefix + 'selected-time-range-display');
+      const chipsGrid = row.querySelector('.' + prefix + 'time-chips-grid');
+      const startSelect = row.querySelector('.' + prefix + 'row-start-select');
+      const endSelect = row.querySelector('.' + prefix + 'row-end-select');
       const roomSelect = document.getElementById(isMobile ? 'mbFormRoomSelect' : 'formRoomSelect');
 
-      if (!minHandle || !maxHandle || !track) return;
+      row._selectionStage = 'start'; // 'start' or 'end'
 
-      function updateBusyZones() {
-        if (!busyTrack) return;
-        busyTrack.innerHTML = '';
+      function getBookingsForDate() {
         const date = dateInput.value;
-        const room = roomSelect.value;
-        if (!date || !room) return;
-
-        const dateBookings = (appData.bookings || []).concat(overviewBookings || []).filter(b => {
+        const room = roomSelect ? roomSelect.value : '';
+        if (!date || !room) return [];
+        return (appData.bookings || []).concat(overviewBookings || []).filter(b => {
           return b.roomName === room && b.bookingDate === date && !(b.status === 'ปฏิเสธ' || b.status === 'ยกเลิก');
-        });
-
-        dateBookings.forEach(b => {
-          const bsMin = timeToMinutes(b.startTime);
-          const beMin = timeToMinutes(b.endTime);
-          const sPct = (bsMin / 1440) * 100;
-          const ePct = (beMin / 1440) * 100;
-          const wPct = ePct - sPct;
-
-          const block = document.createElement('div');
-          block.className = 'absolute top-0 bottom-0 bg-red-400/35 border-x border-red-500/20';
-          block.style.left = sPct + '%';
-          block.style.width = wPct + '%';
-          busyTrack.appendChild(block);
         });
       }
 
-      function updateSliderUI() {
-        const startMin = timeToMinutes(startTimeInput.value);
-        const endMin = timeToMinutes(endTimeInput.value);
-        
-        const minPct = (startMin / 1440) * 100;
-        const maxPct = (endMin / 1440) * 100;
-
-        minHandle.style.left = minPct + '%';
-        maxHandle.style.left = maxPct + '%';
-        activeTrack.style.left = minPct + '%';
-        activeTrack.style.width = (maxPct - minPct) + '%';
-
-        const date = dateInput.value;
-        const room = roomSelect.value;
-        const dateBookings = (appData.bookings || []).concat(overviewBookings || []).filter(b => {
-          return b.roomName === room && b.bookingDate === date && !(b.status === 'ปฏิเสธ' || b.status === 'ยกเลิก');
-        });
-        const conflictedBooking = dateBookings.find(b => {
+      function isTimeOccupied(timeStr, bookings) {
+        const tMin = timeToMinutes(timeStr);
+        return bookings.find(b => {
           const bsMin = timeToMinutes(b.startTime);
           const beMin = timeToMinutes(b.endTime);
-          return (startMin < beMin && endMin > bsMin);
+          return (tMin >= bsMin && tMin < beMin);
         });
-        const hasConflict = !!conflictedBooking;
-
-        display.innerText = `${startTimeInput.value} - ${endTimeInput.value} น.`;
-        if (hasConflict) {
-          activeTrack.classList.remove('bg-cyan-500');
-          activeTrack.classList.add('bg-rose-500', 'shadow-sm', 'shadow-rose-400');
-          minHandle.classList.add('border-rose-500');
-          maxHandle.classList.add('border-rose-500');
-          minHandle.classList.remove('border-cyan-500');
-          maxHandle.classList.remove('border-cyan-600');
-          display.className = (isMobile ? 'mb-selected-time-range-display px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg text-[10px]' : 'selected-time-range-display px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs') + ' font-bold font-mono shadow-2xs animate-pulse';
-          display.innerText += ` ⚠️ ซ้อนกับการจอง (${conflictedBooking.startTime}-${conflictedBooking.endTime})`;
-        } else {
-          activeTrack.classList.remove('bg-rose-500', 'shadow-sm', 'shadow-rose-400');
-          activeTrack.classList.add('bg-cyan-500');
-          minHandle.classList.remove('border-rose-500');
-          maxHandle.classList.remove('border-rose-500');
-          minHandle.classList.add('border-cyan-500');
-          maxHandle.classList.add('border-cyan-600');
-          display.className = (isMobile ? 'mb-selected-time-range-display px-2.5 py-1 bg-cyan-50 text-cyan-700 border border-cyan-100 rounded-lg text-xs' : 'selected-time-range-display px-4 py-2 bg-cyan-50 text-cyan-700 border border-cyan-100 rounded-xl text-sm sm:text-base') + ' font-bold font-mono shadow-sm';
-        }
       }
 
-      function onDrag(e, handleType) {
-        const trackRect = track.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        let pct = (clientX - trackRect.left) / trackRect.width;
-        pct = Math.max(0, Math.min(1, pct));
+      function updateUI() {
+        const bookings = getBookingsForDate();
+        let sTime = startTimeInput.value || '08:00';
+        let eTime = endTimeInput.value || '12:00';
+        const sMin = timeToMinutes(sTime);
+        const eMin = timeToMinutes(eTime);
+        const durationHours = ((eMin - sMin) / 60).toFixed(1).replace('.0', '');
 
-        const slotSize = parseInt(slotSizeInput.value, 10) || 60;
-        const totalMinutes = 1440;
-        const rawMinutes = pct * totalMinutes;
-        
-        let snappedMinutes = Math.round(rawMinutes / slotSize) * slotSize;
-        snappedMinutes = Math.max(0, Math.min(totalMinutes, snappedMinutes));
+        // Sync dropdowns
+        if (startSelect) startSelect.value = sTime;
+        if (endSelect) endSelect.value = eTime;
 
-        const currentStart = timeToMinutes(startTimeInput.value);
-        const currentEnd = timeToMinutes(endTimeInput.value);
+        // Conflict check
+        const hasConflict = bookings.some(b => {
+          const bs = timeToMinutes(b.startTime);
+          const be = timeToMinutes(b.endTime);
+          return (sMin < be && eMin > bs);
+        });
 
-        if (handleType === 'min') {
-          if (snappedMinutes >= currentEnd) {
-            snappedMinutes = currentEnd - slotSize;
+        if (display) {
+          if (hasConflict) {
+            display.className = (isMobile ? 'mb-selected-time-range-display px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs' : 'selected-time-range-display px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs') + ' font-bold font-mono shadow-2xs animate-pulse';
+            display.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${sTime} - ${eTime} น. (ชนเวลาอื่น)`;
+          } else {
+            display.className = (isMobile ? 'mb-selected-time-range-display px-2.5 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg text-xs' : 'selected-time-range-display px-3 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-xl text-xs') + ' font-bold font-mono shadow-2xs';
+            display.innerHTML = `<i class="fa-regular fa-clock mr-1 text-cyan-600"></i> ${sTime} - ${eTime} น. (${durationHours} ชม.)`;
           }
-          if (snappedMinutes < 0) snappedMinutes = 0;
-          startTimeInput.value = minutesToTimeStr(snappedMinutes);
-        } else {
-          if (snappedMinutes <= currentStart) {
-            snappedMinutes = currentStart + slotSize;
-          }
-          if (snappedMinutes > totalMinutes) snappedMinutes = totalMinutes;
-          endTimeInput.value = minutesToTimeStr(snappedMinutes);
         }
 
-        updateSliderUI();
+        if (chipsGrid) {
+          chipsGrid.innerHTML = '';
+          TIME_SLOTS_30M.forEach(slot => {
+            const slotMin = timeToMinutes(slot);
+            const occupiedBooking = isTimeOccupied(slot, bookings);
+            const isSelected = (slotMin >= sMin && slotMin <= eMin);
+            const isStart = (slot === sTime);
+            const isEnd = (slot === eTime);
+
+            const chip = document.createElement('button');
+            chip.type = 'button';
+
+            if (occupiedBooking) {
+              chip.disabled = true;
+              chip.className = 'time-chip relative py-2 px-1 rounded-xl text-center text-xs font-mono font-semibold bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed select-none opacity-60';
+              chip.title = `ติดจอง: ${occupiedBooking.bookedBy} (${occupiedBooking.startTime}-${occupiedBooking.endTime} น.)`;
+              chip.innerHTML = `<div>${slot}</div><div class="text-[9px] font-sans font-bold text-rose-500 mt-0.5">ติดจอง</div>`;
+            } else if (isSelected) {
+              chip.className = 'time-chip relative py-2 px-1 rounded-xl text-center text-xs font-mono font-bold bg-cyan-600 text-white border-2 border-cyan-600 shadow-sm transition hover:scale-102';
+              let tag = '';
+              if (isStart) tag = '<div class="text-[8.5px] font-sans text-cyan-100 uppercase tracking-tighter">เริ่ม</div>';
+              else if (isEnd) tag = '<div class="text-[8.5px] font-sans text-cyan-100 uppercase tracking-tighter">สิ้นสุด</div>';
+              else tag = '<div class="text-[8.5px] font-sans text-cyan-200 opacity-60">•</div>';
+              chip.innerHTML = `<div>${slot}</div>${tag}`;
+              chip.onclick = () => onChipClick(slot);
+            } else {
+              chip.className = 'time-chip relative py-2 px-1 rounded-xl text-center text-xs font-mono font-semibold bg-white hover:bg-cyan-50 text-slate-700 border border-slate-200 hover:border-cyan-400 transition shadow-3xs hover:scale-102';
+              chip.innerHTML = `<div>${slot}</div><div class="text-[9px] font-sans text-emerald-600 mt-0.5 font-bold">ว่าง</div>`;
+              chip.onclick = () => onChipClick(slot);
+            }
+
+            chipsGrid.appendChild(chip);
+          });
+        }
+
         if (isMobile) {
           checkMbFormSlotConflict();
         } else {
@@ -2788,41 +2779,67 @@
         }
       }
 
-      function setupHandle(handle, type) {
-        function startDrag(e) {
-          e.preventDefault();
-          document.addEventListener('mousemove', drag);
-          document.addEventListener('mouseup', stopDrag);
-          document.addEventListener('touchmove', drag, { passive: false });
-          document.addEventListener('touchend', stopDrag);
-          handle.classList.add('scale-110');
+      function onChipClick(clickedSlot) {
+        const clickedMin = timeToMinutes(clickedSlot);
+        const currentStartMin = timeToMinutes(startTimeInput.value);
+
+        if (row._selectionStage === 'start' || clickedMin <= currentStartMin) {
+          startTimeInput.value = clickedSlot;
+          let nextEndMin = clickedMin + 120;
+          if (nextEndMin > 1080) nextEndMin = 1080;
+          endTimeInput.value = minutesToTimeStr(nextEndMin);
+          row._selectionStage = 'end';
+        } else {
+          const bookings = getBookingsForDate();
+          let validEndSlot = clickedSlot;
+          for (let m = currentStartMin; m < clickedMin; m += 30) {
+            const checkSlot = minutesToTimeStr(m);
+            if (isTimeOccupied(checkSlot, bookings)) {
+              showToast('ช่วงเวลาที่เลือกมีช่วงที่ติดจองอยู่ ระบบเลือกเฉพาะช่วงที่ว่างให้', 'error');
+              validEndSlot = checkSlot;
+              break;
+            }
+          }
+          endTimeInput.value = validEndSlot;
+          row._selectionStage = 'start';
         }
 
-        function drag(e) {
-          onDrag(e, type);
-        }
-
-        function stopDrag() {
-          document.removeEventListener('mousemove', drag);
-          document.removeEventListener('mouseup', stopDrag);
-          document.removeEventListener('touchmove', drag);
-          document.removeEventListener('touchend', stopDrag);
-          handle.classList.remove('scale-110');
-        }
-
-        handle.addEventListener('mousedown', startDrag);
-        handle.addEventListener('touchstart', startDrag, { passive: false });
+        updateUI();
       }
 
-      setupHandle(minHandle, 'min');
-      setupHandle(maxHandle, 'max');
+      if (startSelect) {
+        startSelect.onchange = () => {
+          startTimeInput.value = startSelect.value;
+          if (timeToMinutes(endTimeInput.value) <= timeToMinutes(startSelect.value)) {
+            endTimeInput.value = minutesToTimeStr(Math.min(1080, timeToMinutes(startSelect.value) + 60));
+          }
+          row._selectionStage = 'end';
+          updateUI();
+        };
+      }
+      if (endSelect) {
+        endSelect.onchange = () => {
+          if (timeToMinutes(endSelect.value) <= timeToMinutes(startTimeInput.value)) {
+            showToast('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น', 'error');
+            endSelect.value = endTimeInput.value;
+            return;
+          }
+          endTimeInput.value = endSelect.value;
+          row._selectionStage = 'start';
+          updateUI();
+        };
+      }
 
-      row._updateSlider = () => {
-        updateBusyZones();
-        updateSliderUI();
+      row._applyPreset = (s, e) => {
+        startTimeInput.value = s;
+        endTimeInput.value = e;
+        row._selectionStage = 'start';
+        updateUI();
       };
-      
-      row._updateSlider();
+
+      row._updateSlider = updateUI; // backwards-compatible alias
+      row._updateSlots = updateUI;
+      updateUI();
     }
 
     function renderRowSlots(row) {
@@ -2837,6 +2854,10 @@
       const defaultDate = dateVal || selectedDateStr || '';
       const row = document.createElement('div');
       row.className = 'booking-date-row flex flex-col items-stretch gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl relative transition hover:border-cyan-300 w-full';
+      
+      const startOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultStart ? 'selected' : ''}>${t}</option>`).join('');
+      const endOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultEnd ? 'selected' : ''}>${t}</option>`).join('');
+
       row.innerHTML = `
         <div class="flex-1 w-full space-y-3">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
@@ -2845,57 +2866,67 @@
               <input type="date" required value="${defaultDate}" onchange="onRowDateChange(this)" class="row-date px-3 py-1.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none">
             </div>
             
-            <div class="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl border border-slate-300/40 self-start">
-              <span class="text-[10px] font-bold text-slate-500 px-1.5">แสดงทีละ:</span>
-              <button type="button" onclick="setRowSlotSize(this, 15)" class="slot-size-btn px-2.5 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">15 นาที</button>
-              <button type="button" onclick="setRowSlotSize(this, 30)" class="slot-size-btn px-2.5 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">30 นาที</button>
-              <button type="button" onclick="setRowSlotSize(this, 60)" class="slot-size-btn px-2.5 py-1 rounded-lg text-[10px] font-bold bg-cyan-600 text-white shadow-2xs">1 ชม.</button>
-            </div>
-            
             <button type="button" onclick="removeBookingDateRow(this)" class="row-delete-btn px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl flex items-center justify-center transition gap-1.5 text-xs font-bold" title="ลบวันและเวลานี้">
               <i class="fa-solid fa-trash-can text-sm"></i>
               <span>ลบแถว</span>
             </button>
           </div>
-          <div class="slots-grid-container space-y-4 pt-1">
-            <div class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center flex-wrap gap-2">
-              <span>เลือกช่วงเวลาใช้งาน (รูดปุ่มกลมซ้าย-ขวา)</span>
-              <span class="selected-time-range-display px-4 py-2 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl text-sm font-bold font-mono shadow-3xs">ยังไม่เลือกเวลา</span>
-            </div>
-            
-            <div class="relative w-full h-8 flex items-center select-none pt-2 pb-2">
-              <div class="slider-track absolute left-0 right-0 h-2 bg-slate-200 rounded-full"></div>
-              <div class="absolute h-2 bg-amber-400/50 border-x border-amber-500/40" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
-              <div class="absolute -top-3.5 text-[7.5px] font-extrabold text-amber-700 bg-amber-100 border border-amber-300 rounded px-0.5 -translate-x-1/2 select-none pointer-events-none shadow-3xs" style="left: 47.92%;">11-12 น.</div>
-              
-              <div class="busy-track absolute left-0 right-0 h-2 rounded-full overflow-hidden pointer-events-none"></div>
-              <div class="active-track absolute h-2 bg-cyan-500 rounded-full pointer-events-none"></div>
-              
-              <div class="slider-handle min-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-500 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform">
-                <div class="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
+
+          <div class="slots-grid-container space-y-3 pt-1">
+            <!-- Row 1: Quick Presets & Dropdown Custom Time & Summary Badge -->
+            <div class="flex items-center justify-between flex-wrap gap-2.5 bg-white p-3 rounded-xl border border-slate-200/80 shadow-3xs">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[11px] font-bold text-slate-500 mr-1"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
+                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '12:00')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">ช่วงเช้า (08:00-12:00)</button>
+                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('13:00', '17:00')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">ช่วงบ่าย (13:00-17:00)</button>
+                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '17:00')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">เต็มวัน (08:00-17:00)</button>
               </div>
-              <div class="slider-handle max-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-600 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform">
-                <div class="w-1.5 h-1.5 rounded-full bg-cyan-600"></div>
+
+              <!-- Time Dropdowns & Summary -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-1 text-xs">
+                  <span class="text-slate-500 font-medium">เริ่ม:</span>
+                  <select class="row-start-select px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
+                    ${startOptions}
+                  </select>
+                </div>
+                <div class="flex items-center gap-1 text-xs">
+                  <span class="text-slate-500 font-medium">ถึง:</span>
+                  <select class="row-end-select px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
+                    ${endOptions}
+                  </select>
+                </div>
+                <span class="selected-time-range-display px-3 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-xl text-xs font-bold font-mono">--:-- - --:-- น.</span>
               </div>
             </div>
 
-            <div class="flex justify-between text-[9px] font-bold text-slate-400 font-mono select-none px-1">
-              <span>00:00</span>
-              <span>04:00</span>
-              <span>08:00</span>
-              <span>12:00</span>
-              <span>16:00</span>
-              <span>20:00</span>
-              <span>24:00</span>
+            <!-- Row 2: Interactive Time Slot Chips Grid (แตะเลือกเหมือนที่นั่ง) -->
+            <div class="time-chips-card bg-white p-3.5 rounded-xl border border-slate-200 shadow-3xs space-y-2">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium border-b border-slate-100 pb-2">
+                <span class="flex items-center gap-1 text-slate-600 font-bold">
+                  <i class="fa-regular fa-hand-pointer text-cyan-600"></i>
+                  <span>คลิกเลือกเวลาจากบล็อก (แตะเริ่ม และแตะสิ้นสุด)</span>
+                </span>
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center gap-1 text-[10px] text-slate-500"><span class="w-2.5 h-2.5 rounded-sm bg-white border border-slate-300 inline-block"></span> ว่าง</span>
+                  <span class="flex items-center gap-1 text-[10px] text-cyan-700 font-bold"><span class="w-2.5 h-2.5 rounded-sm bg-cyan-600 inline-block"></span> ที่เลือก</span>
+                  <span class="flex items-center gap-1 text-[10px] text-slate-400"><span class="w-2.5 h-2.5 rounded-sm bg-slate-200 border border-slate-300 inline-block"></span> ติดจอง</span>
+                </div>
+              </div>
+
+              <!-- Grid of Time Chips -->
+              <div class="time-chips-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-11 gap-1.5 pt-1">
+                <!-- Injected by initTimeSlotsGrid -->
+              </div>
             </div>
+
+            <input type="hidden" class="row-start-time" value="${defaultStart}">
+            <input type="hidden" class="row-end-time" value="${defaultEnd}">
           </div>
-          <input type="hidden" class="row-start-time" value="${defaultStart}">
-          <input type="hidden" class="row-end-time" value="${defaultEnd}">
-          <input type="hidden" class="row-slot-size" value="60">
         </div>
       `;
       container.appendChild(row);
-      initRowSlider(row, false);
+      initTimeSlotsGrid(row, false);
       updateDeleteButtonsVisibility();
       checkFormSlotConflict();
     }
@@ -3171,17 +3202,6 @@
       checkMbFormSlotConflict();
     }
 
-    function setMbRowSlotSize(btn, size) {
-      const row = btn.closest('.mb-booking-date-row');
-      if (!row) return;
-      row.querySelector('.mb-row-slot-size').value = size;
-      row.querySelectorAll('.mb-slot-size-btn').forEach(b => {
-        b.className = 'mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition';
-      });
-      btn.className = 'mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-600 text-white shadow-2xs';
-      if (row._updateSlider) row._updateSlider();
-    }
-
     function renderMbRowSlots(row) {
       if (row._updateSlider) row._updateSlider();
     }
@@ -3193,66 +3213,77 @@
       const defaultEnd = endVal || '12:00';
       const defaultDate = dateVal || selectedDateStr || '';
       const row = document.createElement('div');
-      row.className = 'mb-booking-date-row flex flex-col items-stretch gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl relative transition w-full';
+      row.className = 'mb-booking-date-row flex flex-col items-stretch gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl relative transition w-full';
+
+      const startOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultStart ? 'selected' : ''}>${t}</option>`).join('');
+      const endOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultEnd ? 'selected' : ''}>${t}</option>`).join('');
+
       row.innerHTML = `
-        <div class="w-full space-y-2">
+        <div class="w-full space-y-2.5">
           <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-2 flex-wrap">
             <div class="flex items-center gap-2">
               <label class="text-[11px] font-bold text-slate-700">วันที่จอง <span class="text-red-500">*</span></label>
               <input type="date" required value="${defaultDate}" onchange="onMbRowDateChange(this)" class="mb-row-date px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white text-slate-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none">
             </div>
-            <button type="button" onclick="removeMbBookingDateRow(this)" class="mb-row-delete-btn px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg flex items-center justify-center transition gap-1 text-[11px] font-bold" title="ลบ">
+            <button type="button" onclick="removeMbBookingDateRow(this)" class="mb-row-delete-btn px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg flex items-center justify-center transition gap-1 text-[11px] font-bold" title="ลบ">
               <i class="fa-solid fa-trash-can text-xs"></i>
               <span>ลบ</span>
             </button>
           </div>
-          
-          <div class="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg border border-slate-300/40 self-start flex-wrap">
-            <span class="text-[9px] font-bold text-slate-500 px-1">แสดงทีละ:</span>
-            <button type="button" onclick="setMbRowSlotSize(this, 15)" class="mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">15 นาที</button>
-            <button type="button" onclick="setMbRowSlotSize(this, 30)" class="mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">30 นาที</button>
-            <button type="button" onclick="setMbRowSlotSize(this, 60)" class="mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-600 text-white shadow-2xs">1 ชม.</button>
-          </div>
 
-          <div class="space-y-2 pt-1">
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center flex-wrap gap-1">
-              <span>เลือกช่วงเวลา (รูดปุ่มกลมซ้าย-ขวา)</span>
-              <span class="mb-selected-time-range-display px-2.5 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg text-xs font-bold font-mono">ยังไม่เลือกเวลา</span>
-            </div>
-            
-            <div class="relative w-full h-8 flex items-center select-none pt-2 pb-2">
-              <div class="slider-track absolute left-0 right-0 h-2 bg-slate-200 rounded-full"></div>
-              <div class="absolute h-2 bg-amber-400/50 border-x border-amber-500/40" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
-              <div class="absolute -top-3.5 text-[7.5px] font-extrabold text-amber-700 bg-amber-100 border border-amber-300 rounded px-0.5 -translate-x-1/2 select-none pointer-events-none shadow-3xs" style="left: 47.92%;">11-12 น.</div>
-              
-              <div class="busy-track absolute left-0 right-0 h-2 rounded-full overflow-hidden pointer-events-none"></div>
-              <div class="active-track absolute h-2 bg-cyan-500 rounded-full pointer-events-none"></div>
-              
-              <div class="slider-handle min-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-500 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform">
-                <div class="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
-              </div>
-              <div class="slider-handle max-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-600 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform">
-                <div class="w-1.5 h-1.5 rounded-full bg-cyan-600"></div>
+          <!-- Quick Presets & Dropdowns -->
+          <div class="space-y-2 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-3xs">
+            <div class="flex items-center justify-between flex-wrap gap-1.5">
+              <span class="text-[10px] font-bold text-slate-500"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
+              <div class="flex items-center gap-1 flex-wrap">
+                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '12:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">เช้า (08-12)</button>
+                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('13:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">บ่าย (13-17)</button>
+                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">เต็มวัน (08-17)</button>
               </div>
             </div>
 
-            <div class="flex justify-between text-[8px] font-bold text-slate-400 font-mono select-none px-0.5">
-              <span>00:00</span>
-              <span>04:00</span>
-              <span>08:00</span>
-              <span>12:00</span>
-              <span>16:00</span>
-              <span>20:00</span>
-              <span>24:00</span>
+            <!-- Time Dropdowns & Status Badge -->
+            <div class="flex items-center justify-between pt-1 border-t border-slate-100 flex-wrap gap-2">
+              <div class="flex items-center gap-1.5 text-xs">
+                <span class="text-slate-500 text-[11px] font-medium">เริ่ม:</span>
+                <select class="mb-row-start-select px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
+                  ${startOptions}
+                </select>
+                <span class="text-slate-500 text-[11px] font-medium">ถึง:</span>
+                <select class="mb-row-end-select px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
+                  ${endOptions}
+                </select>
+              </div>
+              <span class="mb-selected-time-range-display px-2.5 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg text-[11px] font-bold font-mono">--:-- - --:-- น.</span>
             </div>
           </div>
+
+          <!-- Time Chips Block Grid (Interactive Seat-like picker) -->
+          <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-3xs space-y-2">
+            <div class="flex items-center justify-between text-[10px] text-slate-500 font-medium border-b border-slate-100 pb-1.5">
+              <span class="flex items-center gap-1 text-slate-700 font-bold">
+                <i class="fa-regular fa-hand-pointer text-cyan-600"></i>
+                <span>แตะเลือกเวลา (แตะเริ่ม และแตะสิ้นสุด)</span>
+              </span>
+              <div class="flex items-center gap-2 text-[9px]">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-white border border-slate-300 inline-block"></span> ว่าง</span>
+                <span class="flex items-center gap-1 text-cyan-700 font-bold"><span class="w-2 h-2 rounded-xs bg-cyan-600 inline-block"></span> เลือก</span>
+                <span class="flex items-center gap-1 text-slate-400"><span class="w-2 h-2 rounded-xs bg-slate-200 border border-slate-300 inline-block"></span> จอง</span>
+              </div>
+            </div>
+
+            <!-- Grid of Mobile Time Chips (4 columns on mobile for easy thumb tapping) -->
+            <div class="mb-time-chips-grid grid grid-cols-4 sm:grid-cols-6 gap-1.5 pt-0.5">
+              <!-- Injected by initTimeSlotsGrid -->
+            </div>
+          </div>
+
           <input type="hidden" class="mb-row-start-time" value="${defaultStart}">
           <input type="hidden" class="mb-row-end-time" value="${defaultEnd}">
-          <input type="hidden" class="mb-row-slot-size" value="60">
         </div>
       `;
       container.appendChild(row);
-      initRowSlider(row, true);
+      initTimeSlotsGrid(row, true);
       updateMbDeleteButtonsVisibility();
       checkMbFormSlotConflict();
     }
