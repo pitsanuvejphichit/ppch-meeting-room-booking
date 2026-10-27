@@ -1120,23 +1120,27 @@
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
               });
               const data = await res.json();
-              const bookings = (data || []).map(b => ({
-                id: b.booking_id,
-                bookingId: b.booking_id,
-                roomName: b.room_name,
-                bookingDate: b.booking_date,
-                startTime: (b.start_time || '').substring(0, 5),
-                endTime: (b.end_time || '').substring(0, 5),
-                bookedBy: b.booked_by || b.purpose,
-                department: b.department,
-                phone: b.phone,
-                purpose: b.purpose || b.booked_by,
-                meetingType: b.meeting_type,
-                attendees: b.attendees,
-                equipment: b.equipment,
-                seatingLayout: b.seating_layout,
-                status: b.status || 'จองเรียบร้อย'
-              }));
+              const bookings = (data || []).map(b => {
+                const rawStatus = String(b.status || 'จองเรียบร้อย').trim();
+                const normalizedStatus = (rawStatus === 'confirmed' || rawStatus === 'อนุมัติ' || rawStatus === 'จองเรียบร้อย') ? 'จองเรียบร้อย' : rawStatus;
+                return {
+                  id: b.booking_no || b.booking_id || b.id || '',
+                  bookingId: b.booking_no || b.booking_id || b.id || '',
+                  roomName: b.room_name || '',
+                  bookingDate: b.booking_date || '',
+                  startTime: (b.start_time || '').substring(0, 5),
+                  endTime: (b.end_time || '').substring(0, 5),
+                  bookedBy: b.requester_name || b.booked_by || b.bookedBy || '-',
+                  department: b.department || '-',
+                  phone: b.phone || '-',
+                  purpose: b.topic || b.purpose || '-',
+                  meetingType: b.meeting_type || 'ภายใน',
+                  attendees: String(b.attendees_count || b.attendees || '1'),
+                  equipment: Array.isArray(b.equipment) ? b.equipment.join(', ') : String(b.equipment || '-'),
+                  seatingLayout: b.room_layout || b.seating_layout || b.seatingLayout || 'นักเรียน',
+                  status: normalizedStatus
+                };
+              });
               if (this._success) this._success({ success: true, bookings: bookings });
             } catch (err) {
               console.warn('Bridge getOverviewData error:', err);
@@ -1149,23 +1153,27 @@
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
               });
               const data = await res.json();
-              const bookings = (data || []).map(b => ({
-                id: b.booking_id,
-                bookingId: b.booking_id,
-                roomName: b.room_name,
-                bookingDate: b.booking_date,
-                startTime: (b.start_time || '').substring(0, 5),
-                endTime: (b.end_time || '').substring(0, 5),
-                bookedBy: b.booked_by || b.purpose,
-                department: b.department,
-                phone: b.phone,
-                purpose: b.purpose || b.booked_by,
-                meetingType: b.meeting_type,
-                attendees: b.attendees,
-                equipment: b.equipment,
-                seatingLayout: b.seating_layout,
-                status: b.status || 'จองเรียบร้อย'
-              }));
+              const bookings = (data || []).map(b => {
+                const rawStatus = String(b.status || 'จองเรียบร้อย').trim();
+                const normalizedStatus = (rawStatus === 'confirmed' || rawStatus === 'อนุมัติ' || rawStatus === 'จองเรียบร้อย') ? 'จองเรียบร้อย' : rawStatus;
+                return {
+                  id: b.booking_no || b.booking_id || b.id || '',
+                  bookingId: b.booking_no || b.booking_id || b.id || '',
+                  roomName: b.room_name || '',
+                  bookingDate: b.booking_date || '',
+                  startTime: (b.start_time || '').substring(0, 5),
+                  endTime: (b.end_time || '').substring(0, 5),
+                  bookedBy: b.requester_name || b.booked_by || b.bookedBy || '-',
+                  department: b.department || '-',
+                  phone: b.phone || '-',
+                  purpose: b.topic || b.purpose || '-',
+                  meetingType: b.meeting_type || 'ภายใน',
+                  attendees: String(b.attendees_count || b.attendees || '1'),
+                  equipment: Array.isArray(b.equipment) ? b.equipment.join(', ') : String(b.equipment || '-'),
+                  seatingLayout: b.room_layout || b.seating_layout || b.seatingLayout || 'นักเรียน',
+                  status: normalizedStatus
+                };
+              });
               if (this._success) this._success({ success: true, selectedDate: dateStr, rooms: defaultRoomsList, bookings: bookings });
             } catch (err) {
               console.warn('Bridge getPublicData error:', err);
@@ -1186,20 +1194,26 @@
                     'Prefer': 'return=representation'
                   },
                   body: JSON.stringify({
+                    booking_no: bId,
                     booking_id: bId,
                     room_name: payload.roomName,
                     booking_date: item.bookingDate,
                     start_time: item.startTime,
                     end_time: item.endTime,
-                    booked_by: payload.bookedBy || payload.purpose,
-                    department: payload.department,
-                    phone: payload.phone || '',
-                    purpose: payload.purpose || payload.bookedBy,
-                    meeting_type: payload.meetingType || 'การประชุมภายใน',
+                    emp_id: payload.empId || '000000',
+                    requester_name: payload.bookedBy || payload.purpose || '-',
+                    booked_by: payload.bookedBy || payload.purpose || '-',
+                    department: payload.department || '-',
+                    phone: payload.phone || '-',
+                    topic: payload.purpose || payload.bookedBy || '-',
+                    purpose: payload.purpose || payload.bookedBy || '-',
+                    meeting_type: payload.meetingType || 'ภายใน',
+                    attendees_count: parseInt(payload.attendees) || 1,
                     attendees: parseInt(payload.attendees) || 1,
-                    equipment: Array.isArray(payload.equipment) ? payload.equipment.join(', ') : (payload.equipment || ''),
-                    seating_layout: payload.seatingLayout || 'Classroom',
-                    status: 'จองเรียบร้อย'
+                    equipment: Array.isArray(payload.equipment) ? payload.equipment : [payload.equipment || ''],
+                    room_layout: payload.seatingLayout || 'นักเรียน',
+                    seating_layout: payload.seatingLayout || 'นักเรียน',
+                    status: 'confirmed'
                   })
                 });
               }
@@ -1521,7 +1535,7 @@
         if (dayBookings.length > 0) {
           const visible = dayBookings.slice(0, 2);
           visible.forEach(b => {
-            const isApproved = b.status === 'จองเรียบร้อย';
+            const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
             badgesHTML += `
               <div class="text-[10px] font-semibold ${isApproved ? 'bg-cyan-100 text-cyan-900 border border-cyan-200' : 'bg-amber-100 text-amber-900 border border-amber-300 font-bold'} px-2 py-0.5 rounded-lg truncate" title="${b.startTime}-${b.endTime} | ${b.roomName}: ${b.bookedBy}">
                 ${b.startTime}-${b.endTime} น. ${b.roomName.replace('ห้องประชุมชั้น ', 'ชั้น ').replace('ห้องประชุม ', 'ชั้น ')}
@@ -1533,14 +1547,19 @@
           }
 
           // Build custom hover tooltip
-          const listItems = dayBookings.map(b => `
-            <div class="border-l-2 border-cyan-400 pl-2 text-left space-y-0.5">
-              <div class="font-bold text-white text-[11px]">${b.roomName}</div>
-              <div class="text-[10px] text-slate-300 font-mono">⏰ ${b.startTime} - ${b.endTime} น.</div>
-              <div class="text-[9px] text-slate-400">👤 ผู้ขอใช้: ${b.bookedBy} (${b.department})</div>
-              <div class="text-[9px] text-slate-400">📝 หัวข้อ: ${b.purpose}</div>
-            </div>
-          `).join('');
+          const listItems = dayBookings.map(b => {
+            const who = b.bookedBy || b.requester_name || '-';
+            const what = b.purpose || b.topic || '-';
+            const dept = b.department || '-';
+            return `
+              <div class="border-l-2 border-cyan-400 pl-2 text-left space-y-0.5">
+                <div class="font-bold text-white text-[11px]">${b.roomName}</div>
+                <div class="text-[10px] text-cyan-300 font-mono font-bold">⏰ ${b.startTime} - ${b.endTime} น.</div>
+                <div class="text-[9.5px] text-slate-200">👤 ผู้ขอใช้: <strong class="text-white">${who}</strong> (${dept})</div>
+                <div class="text-[9.5px] text-slate-300">📝 หัวข้อ: <strong class="text-cyan-200">${what}</strong></div>
+              </div>
+            `;
+          }).join('');
 
           tooltipHTML = `
             <div class="hidden group-hover:flex flex-col gap-2 absolute bottom-[105%] left-1/2 -translate-x-1/2 w-64 p-3.5 bg-slate-950/95 border border-slate-800 text-white rounded-xl shadow-xl z-50 pointer-events-none text-left backdrop-blur-xs">
@@ -2518,7 +2537,7 @@
 
       const listHtml = bookings && bookings.length > 0
         ? bookings.map(b => {
-            const isApproved = b.status === 'จองเรียบร้อย';
+            const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
             return `
               <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center hover:bg-slate-100/80 transition">
                 <div class="flex items-center space-x-4">
@@ -2527,10 +2546,10 @@
                   </div>
                   <div>
                     <h4 class="font-bold text-slate-900 text-sm">${b.roomName}</h4>
-                    <p class="text-xs text-slate-500 mt-0.5">👤 <strong>ผู้ขอใช้:</strong> ${b.bookedBy} (${b.department}) | 📝 <strong>หัวข้อ:</strong> ${b.purpose} | 🪑 <strong>ผังจัดห้อง:</strong> ${b.seatingLayout || 'นักเรียน'}</p>
+                    <p class="text-xs text-slate-500 mt-0.5">👤 <strong>ผู้ขอใช้:</strong> <span class="font-bold text-slate-800">${b.bookedBy || b.requester_name || '-'}</span> (${b.department || '-'}) | 📝 <strong>หัวข้อ:</strong> <span class="font-bold text-slate-800">${b.purpose || b.topic || '-'}</span> | 🪑 <strong>ผังจัดห้อง:</strong> ${b.seatingLayout || b.room_layout || 'นักเรียน'}</p>
                   </div>
                 </div>
-                <span class="px-3 py-1 rounded-full text-xs font-bold ${isApproved ? 'bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-2xs' : 'bg-amber-50 text-amber-700 border border-amber-200 font-bold'}">${b.status}</span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${isApproved ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs' : 'bg-amber-50 text-amber-700 border border-amber-200 font-bold'}">${isApproved ? 'จองเรียบร้อย' : b.status}</span>
               </div>
             `;
           }).join('')
@@ -2540,7 +2559,7 @@
 
       const mbListHtml = bookings && bookings.length > 0
         ? bookings.map(b => {
-            const isApproved = b.status === 'จองเรียบร้อย';
+            const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
             return `
               <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
                 <div class="flex justify-between items-center">
@@ -2549,9 +2568,9 @@
                 </div>
                 <div class="text-slate-800 font-bold">${b.roomName}</div>
                 <div class="text-[11px] text-slate-500 space-y-0.5">
-                  <div>👤 ผู้ขอใช้: ${b.bookedBy} (${b.department})</div>
-                  <div>📝 หัวข้อ: ${b.purpose}</div>
-                  <div>🪑 ผังห้อง: ${b.seatingLayout || 'นักเรียน'}</div>
+                  <div>👤 ผู้ขอใช้: <strong class="text-slate-800">${b.bookedBy || b.requester_name || '-'}</strong> (${b.department || '-'})</div>
+                  <div>📝 หัวข้อ: <strong class="text-slate-800">${b.purpose || b.topic || '-'}</strong></div>
+                  <div>🪑 ผังห้อง: ${b.seatingLayout || b.room_layout || 'นักเรียน'}</div>
                 </div>
               </div>
             `;
@@ -2689,6 +2708,8 @@
       const prefix = isMobile ? 'mb-' : '';
       const minHandle = row.querySelector('.min-handle');
       const maxHandle = row.querySelector('.max-handle');
+      const minHandleTag = row.querySelector('.min-handle-tag');
+      const maxHandleTag = row.querySelector('.max-handle-tag');
       const activeTrack = row.querySelector('.active-track');
       const busyTrack = row.querySelector('.busy-track');
       const track = row.querySelector('.slider-track') ? row.querySelector('.slider-track').parentElement : null;
@@ -2723,9 +2744,10 @@
           const wPct = ePct - sPct;
 
           const block = document.createElement('div');
-          block.className = 'absolute top-0 bottom-0 bg-red-400/40 border-x border-red-500/30';
+          block.className = 'absolute top-0 bottom-0 bg-red-500/50 border-x-2 border-red-600/70 shadow-2xs';
           block.style.left = sPct + '%';
           block.style.width = wPct + '%';
+          block.title = `ติดจอง: ${b.bookedBy || b.requester_name || '-'} (${b.startTime}-${b.endTime} น.)`;
           busyTrack.appendChild(block);
         });
       }
@@ -2760,6 +2782,10 @@
         activeTrack.style.left = minPct + '%';
         activeTrack.style.width = (maxPct - minPct) + '%';
 
+        // Update floating badges on the handles
+        if (minHandleTag) minHandleTag.innerText = startTimeInput.value;
+        if (maxHandleTag) maxHandleTag.innerText = endTimeInput.value;
+
         // Two-way sync to dropdowns
         ensureOption(startSelect, startTimeInput.value);
         ensureOption(endSelect, endTimeInput.value);
@@ -2780,23 +2806,17 @@
 
         if (display) {
           if (hasConflict) {
-            activeTrack.classList.remove('bg-cyan-500');
-            activeTrack.classList.add('bg-rose-500', 'shadow-sm', 'shadow-rose-400');
-            minHandle.classList.add('border-rose-500');
-            maxHandle.classList.add('border-rose-500');
-            minHandle.classList.remove('border-cyan-500');
-            maxHandle.classList.remove('border-cyan-600');
-            display.className = (isMobile ? 'mb-selected-time-range-display px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs' : 'selected-time-range-display px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs') + ' font-bold font-mono shadow-2xs animate-pulse';
-            display.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${startTimeInput.value} - ${endTimeInput.value} น. (ชนการจองอื่น)`;
+            activeTrack.className = 'active-track absolute h-4 bg-gradient-to-r from-rose-500 to-red-600 rounded-full shadow-md';
+            minHandle.className = 'slider-handle min-handle absolute w-8 h-8 rounded-full bg-white border-3 border-rose-600 ring-2 ring-rose-200 shadow-lg cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform';
+            maxHandle.className = 'slider-handle max-handle absolute w-8 h-8 rounded-full bg-white border-3 border-rose-600 ring-2 ring-rose-200 shadow-lg cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform';
+            display.className = (isMobile ? 'mb-selected-time-range-display px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs' : 'selected-time-range-display px-4 py-2 bg-rose-600 text-white rounded-xl text-sm sm:text-base') + ' font-bold font-mono shadow-md animate-pulse flex items-center gap-1.5';
+            display.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>${startTimeInput.value} - ${endTimeInput.value} น. (ชนการจองอื่น)</span>`;
           } else {
-            activeTrack.classList.remove('bg-rose-500', 'shadow-sm', 'shadow-rose-400');
-            activeTrack.classList.add('bg-cyan-500');
-            minHandle.classList.remove('border-rose-500');
-            maxHandle.classList.remove('border-rose-500');
-            minHandle.classList.add('border-cyan-500');
-            maxHandle.classList.add('border-cyan-600');
-            display.className = (isMobile ? 'mb-selected-time-range-display px-2.5 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg text-xs' : 'selected-time-range-display px-3 py-1.5 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-xl text-xs') + ' font-bold font-mono shadow-3xs';
-            display.innerHTML = `<i class="fa-regular fa-clock mr-1 text-cyan-600"></i> ${startTimeInput.value} - ${endTimeInput.value} น. (${durationHours} ชม.)`;
+            activeTrack.className = 'active-track absolute h-4 bg-gradient-to-r from-cyan-500 to-sky-600 rounded-full shadow-md';
+            minHandle.className = 'slider-handle min-handle absolute w-8 h-8 rounded-full bg-white border-3 border-cyan-600 ring-2 ring-cyan-200 shadow-lg cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform';
+            maxHandle.className = 'slider-handle max-handle absolute w-8 h-8 rounded-full bg-white border-3 border-cyan-600 ring-2 ring-cyan-200 shadow-lg cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform';
+            display.className = (isMobile ? 'mb-selected-time-range-display px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-sky-600 text-white rounded-xl text-xs' : 'selected-time-range-display px-4 py-2 bg-gradient-to-r from-cyan-600 to-sky-600 text-white rounded-xl text-sm sm:text-base') + ' font-bold font-mono shadow-md flex items-center gap-1.5';
+            display.innerHTML = `<i class="fa-regular fa-clock"></i> <span>${startTimeInput.value} - ${endTimeInput.value} น.</span> <span class="text-xs font-sans font-normal opacity-90">(${durationHours} ชม.)</span>`;
           }
         }
       }
@@ -2846,7 +2866,7 @@
           document.addEventListener('mouseup', stopDrag);
           document.addEventListener('touchmove', drag, { passive: false });
           document.addEventListener('touchend', stopDrag);
-          handle.classList.add('scale-110');
+          handle.classList.add('scale-115');
         }
 
         function drag(e) {
@@ -2858,7 +2878,7 @@
           document.removeEventListener('mouseup', stopDrag);
           document.removeEventListener('touchmove', drag);
           document.removeEventListener('touchend', stopDrag);
-          handle.classList.remove('scale-110');
+          handle.classList.remove('scale-115');
         }
 
         handle.addEventListener('mousedown', startDrag);
@@ -2919,7 +2939,7 @@
       const defaultEnd = endVal || '12:00';
       const defaultDate = dateVal || selectedDateStr || '';
       const row = document.createElement('div');
-      row.className = 'booking-date-row flex flex-col items-stretch gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl relative transition hover:border-cyan-300 w-full';
+      row.className = 'booking-date-row flex flex-col items-stretch gap-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl relative transition hover:border-cyan-300 w-full shadow-xs';
       
       const startOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultStart ? 'selected' : ''}>${t}</option>`).join('');
       const endOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultEnd ? 'selected' : ''}>${t}</option>`).join('');
@@ -2930,18 +2950,18 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
             <div class="flex items-center gap-2">
               <label class="block text-xs font-bold text-slate-700">วันที่จอง <span class="text-red-500">*</span></label>
-              <input type="date" required value="${defaultDate}" onchange="onRowDateChange(this)" class="row-date px-3 py-1.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none">
+              <input type="date" required value="${defaultDate}" onchange="onRowDateChange(this)" class="row-date px-3 py-1.5 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none shadow-2xs font-bold font-mono">
             </div>
             
             <div class="flex items-center gap-2 flex-wrap">
-              <div class="flex items-center gap-1 bg-slate-200/60 p-1 rounded-xl border border-slate-300/40">
-                <span class="text-[10px] font-bold text-slate-500 px-1.5">แสดงทีละ:</span>
+              <div class="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl border border-slate-300/50">
+                <span class="text-[10px] font-bold text-slate-600 px-1.5">ความละเอียด:</span>
                 <button type="button" onclick="setRowSlotSize(this, 15)" class="slot-size-btn px-2.5 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">15 นาที</button>
                 <button type="button" onclick="setRowSlotSize(this, 30)" class="slot-size-btn px-2.5 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">30 นาที</button>
                 <button type="button" onclick="setRowSlotSize(this, 60)" class="slot-size-btn px-2.5 py-1 rounded-lg text-[10px] font-bold bg-cyan-600 text-white shadow-2xs">1 ชม.</button>
               </div>
               
-              <button type="button" onclick="removeBookingDateRow(this)" class="row-delete-btn px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl flex items-center justify-center transition gap-1.5 text-xs font-bold" title="ลบวันและเวลานี้">
+              <button type="button" onclick="removeBookingDateRow(this)" class="row-delete-btn px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl flex items-center justify-center transition gap-1.5 text-xs font-bold" title="ลบวันและเวลานี้">
                 <i class="fa-solid fa-trash-can text-sm"></i>
                 <span>ลบแถว</span>
               </button>
@@ -2949,71 +2969,92 @@
           </div>
 
           <!-- Middle Row: Dropdown Selectors & Quick Presets & Time Badge -->
-          <div class="flex items-center justify-between flex-wrap gap-2.5 bg-white p-3 rounded-xl border border-slate-200/80 shadow-3xs">
-            <!-- Quick Presets -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[11px] font-bold text-slate-500 mr-1"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
-              <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '12:00')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">ช่วงเช้า (08:00-12:00)</button>
-              <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('13:00', '17:00')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">ช่วงบ่าย (13:00-17:00)</button>
-              <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '17:00')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">เต็มวัน (08:00-17:00)</button>
+          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+              <!-- Quick Presets -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs font-extrabold text-slate-600 mr-1"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
+                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '12:00')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 hover:border-cyan-300 transition shadow-3xs">⚡ เช้า (08:00-12:00)</button>
+                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('13:00', '17:00')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 hover:border-cyan-300 transition shadow-3xs">⚡ บ่าย (13:00-17:00)</button>
+                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '17:00')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 hover:border-cyan-300 transition shadow-3xs">⚡ เต็มวัน (08:00-17:00)</button>
+              </div>
+
+              <!-- Display Badge -->
+              <span class="selected-time-range-display px-4 py-2 bg-gradient-to-r from-cyan-600 to-sky-600 text-white rounded-xl text-sm sm:text-base font-bold font-mono shadow-md flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i> <span>${defaultStart} - ${defaultEnd} น.</span>
+              </span>
             </div>
 
-            <!-- Dropdown Selectors + Summary Display Badge -->
-            <div class="flex items-center gap-2 flex-wrap">
-              <div class="flex items-center gap-1.5 text-xs">
-                <span class="text-slate-600 font-bold">เวลาเริ่ม:</span>
-                <select class="row-start-select px-2.5 py-1.5 bg-slate-50 hover:bg-white border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
-                  ${startOptions}
-                </select>
+            <!-- Dropdown Selectors (เวลาเริ่ม - ถึงเวลา) -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-3">
+              <div class="flex items-center gap-4 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <label class="text-xs font-extrabold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-play text-cyan-600 text-[9px]"></i>เวลาเริ่ม:</label>
+                  <select class="row-start-select px-3 py-1.5 bg-white hover:border-cyan-500 border-2 border-slate-300 rounded-xl font-mono font-black text-sm text-slate-800 focus:ring-2 focus:ring-cyan-300 shadow-2xs">
+                    ${startOptions}
+                  </select>
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="text-xs font-extrabold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-flag-checkered text-cyan-600 text-[9px]"></i>ถึงเวลา:</label>
+                  <select class="row-end-select px-3 py-1.5 bg-white hover:border-cyan-500 border-2 border-slate-300 rounded-xl font-mono font-black text-sm text-slate-800 focus:ring-2 focus:ring-cyan-300 shadow-2xs">
+                    ${endOptions}
+                  </select>
+                </div>
               </div>
-              <div class="flex items-center gap-1.5 text-xs">
-                <span class="text-slate-600 font-bold">ถึง:</span>
-                <select class="row-end-select px-2.5 py-1.5 bg-slate-50 hover:bg-white border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
-                  ${endOptions}
-                </select>
-              </div>
-              <span class="selected-time-range-display px-3 py-1.5 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-xl text-xs font-bold font-mono shadow-3xs">08:00 - 12:00 น.</span>
+              <span class="text-[11px] font-bold text-slate-400">เลื่อนปุ่มกลมด้านล่าง หรือเลือกเวลาในดรอปดาวน์</span>
             </div>
           </div>
 
-          <!-- Bottom Row: The Timeline Slider ("เส้นเหมือนก่อนหน้านี้") -->
-          <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-3xs space-y-3">
-            <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium">
-              <span class="flex items-center gap-1 font-bold text-slate-700">
-                <i class="fa-solid fa-arrows-left-right text-cyan-600"></i>
-                <span>แถบเวลา 24 ชม. (รูดปุ่มกลมซ้าย-ขวา หรือคลิกดรอปดาวน์ด้านบน)</span>
+          <!-- Bottom Row: The Timeline Slider (เส้นเวลาชัดเจน พร้อม Handle ป้ายกำกับเวลา) -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-4">
+            <div class="flex items-center justify-between text-xs text-slate-600 font-bold border-b border-slate-100 pb-2">
+              <span class="flex items-center gap-1.5 text-slate-800">
+                <i class="fa-solid fa-arrows-left-right text-cyan-600 text-sm"></i>
+                <span>แถบเวลา 24 ชม. (รูดปุ่มกลมไปซ้าย-ขวาเพื่อขยายหรือย้ายช่วงเวลา)</span>
               </span>
-              <div class="flex items-center gap-3 text-[10px]">
-                <span class="flex items-center gap-1"><span class="w-3 h-1.5 rounded-full bg-cyan-500 inline-block"></span> ช่วงเวลาที่เลือก</span>
-                <span class="flex items-center gap-1 text-red-500"><span class="w-3 h-1.5 rounded-full bg-red-400 inline-block"></span> ติดจอง</span>
-                <span class="flex items-center gap-1 text-amber-600"><span class="w-3 h-1.5 rounded-full bg-amber-400 inline-block"></span> พักเที่ยง (11-12)</span>
+              <div class="flex items-center gap-3 text-[10.5px]">
+                <span class="flex items-center gap-1.5"><span class="w-3.5 h-2 rounded-full bg-cyan-500 inline-block shadow-2xs"></span> ช่วงที่เลือก</span>
+                <span class="flex items-center gap-1.5 text-red-600"><span class="w-3.5 h-2 rounded-full bg-red-500 inline-block shadow-2xs"></span> ติดจอง</span>
+                <span class="flex items-center gap-1.5 text-amber-700"><span class="w-3.5 h-2 rounded-full bg-amber-400 inline-block shadow-2xs"></span> พักเที่ยง (11-12)</span>
               </div>
             </div>
             
-            <div class="relative w-full h-8 flex items-center select-none pt-2 pb-2">
-              <div class="slider-track absolute left-0 right-0 h-2.5 bg-slate-200 rounded-full"></div>
-              <div class="absolute h-2.5 bg-amber-400/50 border-x border-amber-500/40" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
-              <div class="absolute -top-3.5 text-[7.5px] font-extrabold text-amber-700 bg-amber-100 border border-amber-300 rounded px-1 -translate-x-1/2 select-none pointer-events-none shadow-3xs" style="left: 47.92%;">11-12 น.</div>
+            <div class="relative w-full h-10 flex items-center select-none pt-4 pb-2">
+              <!-- Slider Base Track -->
+              <div class="slider-track absolute left-0 right-0 h-4 bg-slate-200 border border-slate-300/80 rounded-full shadow-inner"></div>
               
-              <div class="busy-track absolute left-0 right-0 h-2.5 rounded-full overflow-hidden pointer-events-none"></div>
-              <div class="active-track absolute h-2.5 bg-cyan-500 rounded-full pointer-events-none transition-colors"></div>
+              <!-- Lunch Break 11:00 - 12:00 -->
+              <div class="absolute h-4 bg-amber-400/50 border-x-2 border-amber-500/60" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
+              <div class="absolute -top-3.5 text-[8.5px] font-black text-amber-800 bg-amber-100 border border-amber-300 rounded px-1.5 -translate-x-1/2 select-none pointer-events-none shadow-2xs" style="left: 47.92%;">11-12 น. (พักเที่ยง)</div>
               
-              <div class="slider-handle min-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-500 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform" title="เวลาเริ่มต้น">
-                <div class="w-2 h-2 rounded-full bg-cyan-500"></div>
+              <!-- Busy Booked Track -->
+              <div class="busy-track absolute left-0 right-0 h-4 rounded-full overflow-hidden pointer-events-none"></div>
+              
+              <!-- Active Range Track -->
+              <div class="active-track absolute h-4 bg-gradient-to-r from-cyan-500 to-sky-600 rounded-full shadow-md pointer-events-none transition-colors"></div>
+              
+              <!-- Min Handle (Start) -->
+              <div class="slider-handle min-handle absolute w-8 h-8 rounded-full bg-white border-3 border-cyan-600 ring-2 ring-cyan-200 shadow-lg cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform" title="เวลาเริ่มต้น (รูดได้)">
+                <div class="w-2.5 h-2.5 rounded-full bg-cyan-600"></div>
+                <div class="min-handle-tag absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 text-cyan-300 rounded-md text-[11px] font-mono font-bold whitespace-nowrap shadow-md pointer-events-none border border-slate-700">${defaultStart}</div>
               </div>
-              <div class="slider-handle max-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-600 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform" title="เวลาสิ้นสุด">
-                <div class="w-2 h-2 rounded-full bg-cyan-600"></div>
+
+              <!-- Max Handle (End) -->
+              <div class="slider-handle max-handle absolute w-8 h-8 rounded-full bg-white border-3 border-cyan-600 ring-2 ring-cyan-200 shadow-lg cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform" title="เวลาสิ้นสุด (รูดได้)">
+                <div class="w-2.5 h-2.5 rounded-full bg-cyan-600"></div>
+                <div class="max-handle-tag absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 text-cyan-300 rounded-md text-[11px] font-mono font-bold whitespace-nowrap shadow-md pointer-events-none border border-slate-700">${defaultEnd}</div>
               </div>
             </div>
 
-            <div class="flex justify-between text-[9px] font-bold text-slate-400 font-mono select-none px-1">
-              <span>00:00</span>
-              <span>04:00</span>
-              <span>08:00</span>
-              <span>12:00</span>
-              <span>16:00</span>
-              <span>20:00</span>
-              <span>24:00</span>
+            <!-- Hour Ticks -->
+            <div class="flex justify-between text-[10px] font-bold text-slate-500 font-mono select-none px-1 pt-1 border-t border-slate-100">
+              <span class="flex flex-col items-center"><span>|</span><span>00:00</span></span>
+              <span class="flex flex-col items-center"><span>|</span><span>04:00</span></span>
+              <span class="flex flex-col items-center text-cyan-700"><span>|</span><span>08:00</span></span>
+              <span class="flex flex-col items-center text-amber-700"><span>|</span><span>12:00</span></span>
+              <span class="flex flex-col items-center text-cyan-700"><span>|</span><span>16:00</span></span>
+              <span class="flex flex-col items-center"><span>|</span><span>20:00</span></span>
+              <span class="flex flex-col items-center"><span>|</span><span>24:00</span></span>
             </div>
           </div>
 
@@ -3322,7 +3363,7 @@
       const defaultEnd = endVal || '12:00';
       const defaultDate = dateVal || selectedDateStr || '';
       const row = document.createElement('div');
-      row.className = 'mb-booking-date-row flex flex-col items-stretch gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl relative transition w-full';
+      row.className = 'mb-booking-date-row flex flex-col items-stretch gap-2.5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl relative transition w-full shadow-2xs';
 
       const startOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultStart ? 'selected' : ''}>${t}</option>`).join('');
       const endOptions = ALL_DROPDOWN_HOURS.map(t => `<option value="${t}" ${t === defaultEnd ? 'selected' : ''}>${t}</option>`).join('');
@@ -3333,11 +3374,11 @@
           <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-2 flex-wrap">
             <div class="flex items-center gap-2">
               <label class="text-[11px] font-bold text-slate-700">วันที่จอง <span class="text-red-500">*</span></label>
-              <input type="date" required value="${defaultDate}" onchange="onMbRowDateChange(this)" class="mb-row-date px-2 py-1 border border-slate-300 rounded-lg text-xs bg-white text-slate-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none">
+              <input type="date" required value="${defaultDate}" onchange="onMbRowDateChange(this)" class="mb-row-date px-2.5 py-1 border border-slate-300 rounded-lg text-xs bg-white text-slate-900 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none font-bold font-mono">
             </div>
             
             <div class="flex items-center gap-1.5">
-              <div class="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg border border-slate-300/40">
+              <div class="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg border border-slate-300/50">
                 <button type="button" onclick="setMbRowSlotSize(this, 15)" class="mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">15 นาที</button>
                 <button type="button" onclick="setMbRowSlotSize(this, 30)" class="mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-white hover:text-slate-900 transition">30 นาที</button>
                 <button type="button" onclick="setMbRowSlotSize(this, 60)" class="mb-slot-size-btn px-2 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-600 text-white shadow-2xs">1 ชม.</button>
@@ -3351,68 +3392,76 @@
           </div>
 
           <!-- Middle Row: Dropdowns & Presets & Badge -->
-          <div class="space-y-2 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-3xs">
+          <div class="space-y-2 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
             <div class="flex items-center justify-between flex-wrap gap-1.5">
-              <span class="text-[10px] font-bold text-slate-500"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
+              <span class="text-[10.5px] font-extrabold text-slate-600"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
               <div class="flex items-center gap-1 flex-wrap">
-                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '12:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">เช้า (08-12)</button>
-                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('13:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">บ่าย (13-17)</button>
-                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition">เต็มวัน (08-17)</button>
+                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '12:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition shadow-3xs">⚡ เช้า (08-12)</button>
+                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('13:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition shadow-3xs">⚡ บ่าย (13-17)</button>
+                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition shadow-3xs">⚡ เต็มวัน (08-17)</button>
               </div>
             </div>
 
             <!-- Time Dropdowns & Status Badge -->
-            <div class="flex items-center justify-between pt-1 border-t border-slate-100 flex-wrap gap-2">
-              <div class="flex items-center gap-1 text-xs">
-                <span class="text-slate-600 text-[11px] font-bold">เริ่ม:</span>
-                <select class="mb-row-start-select px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
-                  ${startOptions}
-                </select>
-                <span class="text-slate-600 text-[11px] font-bold">ถึง:</span>
-                <select class="mb-row-end-select px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
-                  ${endOptions}
-                </select>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+              <div class="flex items-center gap-2 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-600 text-[11px] font-bold">เริ่ม:</span>
+                  <select class="mb-row-start-select px-2.5 py-1.5 bg-white border-2 border-slate-300 rounded-lg font-mono font-black text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
+                    ${startOptions}
+                  </select>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-600 text-[11px] font-bold">ถึง:</span>
+                  <select class="mb-row-end-select px-2.5 py-1.5 bg-white border-2 border-slate-300 rounded-lg font-mono font-black text-xs text-slate-800 focus:ring-2 focus:ring-cyan-500">
+                    ${endOptions}
+                  </select>
+                </div>
               </div>
-              <span class="mb-selected-time-range-display px-2.5 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-lg text-[11px] font-bold font-mono">08:00 - 12:00 น.</span>
+              <span class="mb-selected-time-range-display px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-sky-600 text-white rounded-xl text-xs font-bold font-mono shadow-sm">
+                <i class="fa-regular fa-clock mr-1"></i> ${defaultStart} - ${defaultEnd} น.
+              </span>
             </div>
           </div>
 
-          <!-- Bottom Row: The Timeline Slider ("เส้นเหมือนก่อนหน้านี้") -->
-          <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-3xs space-y-2">
-            <div class="flex items-center justify-between text-[10px] text-slate-500 font-medium">
-              <span class="flex items-center gap-1 font-bold text-slate-700">
+          <!-- Bottom Row: The Timeline Slider (เส้นเวลาแบบหนาชัดเจน) -->
+          <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+            <div class="flex items-center justify-between text-[10px] text-slate-600 font-bold border-b border-slate-100 pb-1.5">
+              <span class="flex items-center gap-1 text-slate-800 font-bold">
                 <i class="fa-solid fa-arrows-left-right text-cyan-600"></i>
-                <span>แถบเวลา 24 ชม. (รูดปุ่มกลมซ้าย-ขวา)</span>
+                <span>แถบเวลา 24 ชม. (รูดปุ่มกลม)</span>
               </span>
               <div class="flex items-center gap-2 text-[9px]">
-                <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 rounded-full bg-cyan-500 inline-block"></span> เลือก</span>
-                <span class="flex items-center gap-1 text-red-500"><span class="w-2.5 h-1.5 rounded-full bg-red-400 inline-block"></span> ติดจอง</span>
-                <span class="flex items-center gap-1 text-amber-600"><span class="w-2.5 h-1.5 rounded-full bg-amber-400 inline-block"></span> พักเที่ยง</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 rounded-full bg-cyan-500 inline-block shadow-2xs"></span> เลือก</span>
+                <span class="flex items-center gap-1 text-red-600"><span class="w-2.5 h-1.5 rounded-full bg-red-500 inline-block shadow-2xs"></span> ติดจอง</span>
+                <span class="flex items-center gap-1 text-amber-700"><span class="w-2.5 h-1.5 rounded-full bg-amber-400 inline-block shadow-2xs"></span> พักเที่ยง</span>
               </div>
             </div>
             
-            <div class="relative w-full h-8 flex items-center select-none pt-2 pb-2">
-              <div class="slider-track absolute left-0 right-0 h-2 bg-slate-200 rounded-full"></div>
-              <div class="absolute h-2 bg-amber-400/50 border-x border-amber-500/40" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
-              <div class="absolute -top-3.5 text-[7.5px] font-extrabold text-amber-700 bg-amber-100 border border-amber-300 rounded px-1 -translate-x-1/2 select-none pointer-events-none shadow-3xs" style="left: 47.92%;">11-12 น.</div>
+            <div class="relative w-full h-9 flex items-center select-none pt-3 pb-2">
+              <div class="slider-track absolute left-0 right-0 h-3.5 bg-slate-200 border border-slate-300/80 rounded-full shadow-inner"></div>
+              <div class="absolute h-3.5 bg-amber-400/50 border-x border-amber-500/50" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
+              <div class="absolute -top-3 text-[7.5px] font-black text-amber-800 bg-amber-100 border border-amber-300 rounded px-1 -translate-x-1/2 select-none pointer-events-none shadow-3xs" style="left: 47.92%;">11-12 น.</div>
               
-              <div class="busy-track absolute left-0 right-0 h-2 rounded-full overflow-hidden pointer-events-none"></div>
-              <div class="active-track absolute h-2 bg-cyan-500 rounded-full pointer-events-none transition-colors"></div>
+              <div class="busy-track absolute left-0 right-0 h-3.5 rounded-full overflow-hidden pointer-events-none"></div>
+              <div class="active-track absolute h-3.5 bg-gradient-to-r from-cyan-500 to-sky-600 rounded-full shadow-sm pointer-events-none transition-colors"></div>
               
-              <div class="slider-handle min-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-500 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform">
-                <div class="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
+              <div class="slider-handle min-handle absolute w-7 h-7 rounded-full bg-white border-2 border-cyan-600 ring-2 ring-cyan-200 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform">
+                <div class="w-2 h-2 rounded-full bg-cyan-600"></div>
+                <div class="min-handle-tag absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-slate-900 text-cyan-300 rounded text-[9.5px] font-mono font-bold whitespace-nowrap shadow-md pointer-events-none border border-slate-700">${defaultStart}</div>
               </div>
-              <div class="slider-handle max-handle absolute w-6 h-6 rounded-full bg-white border-2 border-cyan-600 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-10 hover:scale-110 active:scale-95 transition-transform">
-                <div class="w-1.5 h-1.5 rounded-full bg-cyan-600"></div>
+              <div class="slider-handle max-handle absolute w-7 h-7 rounded-full bg-white border-2 border-cyan-600 ring-2 ring-cyan-200 shadow-md cursor-pointer flex items-center justify-center -translate-x-1/2 touch-none z-20 hover:scale-115 active:scale-95 transition-transform">
+                <div class="w-2 h-2 rounded-full bg-cyan-600"></div>
+                <div class="max-handle-tag absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-slate-900 text-cyan-300 rounded text-[9.5px] font-mono font-bold whitespace-nowrap shadow-md pointer-events-none border border-slate-700">${defaultEnd}</div>
               </div>
             </div>
 
-            <div class="flex justify-between text-[8px] font-bold text-slate-400 font-mono select-none px-0.5">
+            <div class="flex justify-between text-[8px] font-bold text-slate-500 font-mono select-none px-0.5 pt-1 border-t border-slate-100">
               <span>00:00</span>
               <span>04:00</span>
-              <span>08:00</span>
-              <span>12:00</span>
-              <span>16:00</span>
+              <span class="text-cyan-700">08:00</span>
+              <span class="text-amber-700">12:00</span>
+              <span class="text-cyan-700">16:00</span>
               <span>20:00</span>
               <span>24:00</span>
             </div>
