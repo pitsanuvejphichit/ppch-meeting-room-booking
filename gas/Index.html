@@ -172,62 +172,39 @@
   <!-- ============================================================================================== -->
   <!-- 🖥️ DESKTOP LAYOUT (เปิดบนคอมพิวเตอร์ - LIGHT THEME)                                           -->
   <!-- ============================================================================================== -->
-  <div id="desktopLayout" class="hidden min-h-screen flex bg-slate-100/70 font-sans">
+  <div id="desktopLayout" class="hidden min-h-screen flex flex-col bg-slate-100/70 font-sans">
     
-    <!-- LEFT SIDEBAR -->
-    <aside class="w-80 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 shadow-sm overflow-y-auto custom-scrollbar">
-      <div class="p-6 space-y-6">
+    <!-- TOP CLEAN NAVBAR (Ultra-Clean: Left Brand, Right Clock & Admin Gear Icon) -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         
-        <!-- Header Brand -->
-        <div class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200/60 rounded-2xl shadow-3xs space-y-1.5">
-          <img src="https://drive.google.com/thumbnail?id=1K9GBW7ukzes0ekrPMwyKOJDwG5w12hpu&sz=w600" alt="LOGO" class="h-10 w-auto object-contain">
-          <div class="text-[10px] font-bold text-slate-400 tracking-wider uppercase border-t border-slate-100 pt-1.5 w-full text-center">
-            ระบบจองห้องประชุม
+        <!-- Hospital Brand & System Title (Click to go to Calendar Home) -->
+        <div onclick="backToCalendar()" class="flex items-center space-x-3.5 cursor-pointer group" title="กลับหน้าปฏิทิน">
+          <img src="https://drive.google.com/thumbnail?id=1K9GBW7ukzes0ekrPMwyKOJDwG5w12hpu&sz=w600" alt="LOGO" class="h-9 w-auto object-contain transition-transform group-hover:scale-105">
+          <div class="flex flex-col">
+            <span class="text-base font-bold text-slate-800 leading-tight group-hover:text-cyan-700 transition-colors">ระบบจองห้องประชุม</span>
+            <span class="text-xs text-slate-500 font-medium">โรงพยาบาลพิษณุเวช พิจิตร</span>
           </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div class="space-y-1.5">
-          <button onclick="switchDesktopTab('calendar')" id="dtTabCalBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold bg-cyan-600 text-white shadow-md shadow-cyan-600/20 transition">
-            <i class="fa-regular fa-calendar-check text-sm"></i>
-            <span>ปฏิทินของฉัน (เลือกวันที่)</span>
-          </button>
-          <button onclick="switchDesktopTab('booking')" id="dtTabBookingBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
-            <i class="fa-solid fa-pen-to-square text-sm"></i>
-            <span>แบบฟอร์มจองห้องประชุม</span>
-          </button>
-          <button onclick="switchDesktopTab('overview')" id="dtTabOverviewBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
-            <i class="fa-solid fa-chart-line text-sm"></i>
-            <span>รายการจองภาพรวม (สัปดาห์/เดือน)</span>
-          </button>
-          <button onclick="switchDesktopTab('admin')" id="dtTabAdminBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
-            <i class="fa-solid fa-user-shield text-sm text-amber-500"></i>
-            <span>ผู้ดูแลระบบ (Admin Panel)</span>
-          </button>
-        </div>
+        <!-- Right Side: Real-time Clock & Subtle Admin Gear Icon Button -->
+        <div class="flex items-center space-x-3">
+          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/60 text-xs font-mono font-medium text-slate-600">
+            <i class="fa-regular fa-clock text-slate-400"></i>
+            <span id="dtClock">--:--:--</span>
+          </div>
 
-        <!-- QUICK SUMMARY CARD -->
-        <div class="bg-cyan-50/60 rounded-2xl p-4 border border-cyan-100 space-y-3">
-          <div class="text-xs font-bold text-cyan-900 flex items-center gap-2">
-            <i class="fa-solid fa-circle-info text-cyan-600"></i>
-            <span>ข้อมูลห้องประชุม</span>
-          </div>
-          <div class="text-xs text-slate-600 space-y-1.5">
-            <div class="flex justify-between"><span>ห้องประชุมทั้งหมด:</span><span class="font-bold text-slate-800">5 ห้อง</span></div>
-            <div class="flex justify-between"><span>เปิดบริการ:</span><span class="font-bold text-emerald-600">ตลอด 24 ชั่วโมง</span></div>
-          </div>
+          <!-- Subtle Admin Gear Icon Button (รูปเฟืองสำหรับเข้าระบบ Admin) -->
+          <button id="adminGearBtn" onclick="handleAdminGearClick()" class="w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 active:scale-95 border border-slate-200 text-slate-500 hover:text-cyan-700 hover:border-cyan-300 flex items-center justify-center transition shadow-2xs" title="ผู้ดูแลระบบ (Admin Panel)">
+            <i class="fa-solid fa-gear text-base"></i>
+          </button>
         </div>
 
       </div>
+    </header>
 
-      <div class="p-4 border-t border-slate-200 bg-slate-50 text-xs text-slate-500 flex justify-between items-center">
-        <span class="font-medium">พิษณุเวช พิจิตร</span>
-        <span id="dtClock" class="font-mono text-slate-700 font-bold">--:--:--</span>
-      </div>
-    </aside>
-
-    <!-- RIGHT MAIN WORKSPACE -->
-    <main class="flex-1 flex flex-col overflow-y-auto bg-slate-100/70 custom-scrollbar p-8 space-y-6">
+    <!-- CENTERED MAIN WORKSPACE (No double scrollbars) -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
       
       <!-- TAB 1: DESKTOP MAIN CALENDAR & ROOM SCHEDULE -->
       <div id="dtMainCalSection" class="space-y-6 w-full">
@@ -327,7 +304,18 @@
 
       <!-- TAB: DEDICATED BOOKING FORM SECTION -->
       <div id="dtMainBookingSection" class="hidden space-y-6 w-full">
-        <div id="bookingFormSection" class="bg-white rounded-2xl p-6 border border-slate-200 space-y-6 shadow-sm scroll-mt-6">
+        <!-- Top Back to Calendar Nav Bar -->
+        <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+          <button type="button" onclick="backToCalendar()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition active:scale-95">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>กลับหน้าปฏิทิน</span>
+          </button>
+          <div class="text-xs text-slate-500 font-medium hidden sm:inline-block">
+            <i class="fa-solid fa-shield-halved text-cyan-600 mr-1"></i>ระบบตรวจสอบการจองซ้ำอัตโนมัติ Real-time
+          </div>
+        </div>
+
+        <div id="bookingFormSection"  class="bg-white rounded-2xl p-6 border border-slate-200 space-y-6 shadow-sm scroll-mt-6">
           <div class="bg-gradient-to-r from-cyan-600 to-blue-600 -mx-6 -mt-6 p-6 text-white flex justify-between items-center rounded-t-2xl">
             <div>
               <h3 class="font-bold text-lg flex items-center gap-2">
@@ -336,6 +324,9 @@
               </h3>
               <p class="text-xs text-cyan-100 mt-0.5">กรอกข้อมูลด้านล่างเพื่อส่งคำขอจองห้องประชุม - โรงพยาบาลพิษณุเวช พิจิตร</p>
             </div>
+            <button type="button" onclick="backToCalendar()" class="px-3.5 py-1.5 bg-white/15 hover:bg-white/25 border border-white/25 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95">
+              <i class="fa-solid fa-chevron-left text-[11px]"></i> กลับหน้าปฏิทิน
+            </button>
           </div>
 
           <div id="modalConflictAlert" class="hidden p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold flex items-center gap-2">
@@ -553,8 +544,13 @@
               </div>
             </div>
 
-            <div class="pt-3 flex justify-end gap-2">
-              <button type="submit" id="submitBookingBtn" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl text-sm shadow-md shadow-cyan-600/20 transition hover:from-cyan-700 hover:to-blue-700">ส่งแบบฟอร์มจองห้องประชุม</button>
+            <div class="pt-3 flex justify-end gap-3 flex-wrap">
+              <button type="button" onclick="backToCalendar()" class="px-6 py-3 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-100 transition active:scale-95">
+                ยกเลิก / กลับหน้าปฏิทิน
+              </button>
+              <button type="submit" id="submitBookingBtn" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl text-sm shadow-md shadow-cyan-600/20 transition hover:from-cyan-700 hover:to-blue-700 active:scale-95">
+                ส่งแบบฟอร์มจองห้องประชุม
+              </button>
             </div>
 
           </form>
@@ -562,8 +558,85 @@
       </div>
 
       <!-- TAB 3: OVERVIEW WITH KHUN NICK'S UX SIGNATURE -->
-      <div id="dtMainOverviewSection" class="hidden space-y-6 w-full">
-        <!-- Header -->
+      <!-- TAB 4: ADMIN PANEL WORKSPACE -->
+      <div id="dtMainAdminSection" class="hidden space-y-6 w-full">
+        <!-- Top Back to Calendar Nav Bar -->
+        <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+          <button type="button" onclick="backToCalendar()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition active:scale-95">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>กลับหน้าปฏิทิน</span>
+          </button>
+          <div class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-amber-600"></i>
+            <span>โหมดผู้ดูแลระบบ (Admin Mode)</span>
+          </div>
+        </div>
+
+        <!-- Admin Top Bar -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 flex flex-wrap justify-between items-center gap-4 shadow-sm">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-xl font-bold">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">ผู้ดูแลระบบ (Admin Workspace)</h2>
+              <p class="text-xs text-slate-500 mt-0.5">อนุมัติ/ยกเลิกคำขอจองห้องประชุม และจัดการข้อมูลห้องประชุม</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button type="button" onclick="switchAdminSubTab('bookings')" id="adminSubTabBookingsBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs">จัดการคำขอจอง</button>
+            <button type="button" onclick="switchAdminSubTab('rooms')" id="adminSubTabRoomsBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">ข้อมูลห้องประชุม (5 ห้อง)</button>
+            <button type="button" onclick="switchAdminSubTab('overview')" id="adminSubTabOverviewBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">รายงานภาพรวม (Overview)</button>
+          </div>
+        </div>
+
+        <!-- Subtab 1: Bookings Approvals & Management -->
+        <div id="adminBookingsSubSection" class="space-y-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+              <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-gavel text-amber-600"></i>
+                <span>รายการคำขอจองทั้งหมด (คลิกเพื่ออนุมัติ / ยกเลิก)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="text" id="adminSearchInput" oninput="filterAdminBookings()" placeholder="ค้นหารายการจอง..." class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500">
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+                  <tr>
+                    <th class="py-3 px-4">รหัส / วันเวลา</th>
+                    <th class="py-3 px-4">ห้องประชุม</th>
+                    <th class="py-3 px-4">ผู้ขอจอง / เบอร์</th>
+                    <th class="py-3 px-4">วัตถุประสงค์</th>
+                    <th class="py-3 px-4 text-center">สถานะปัจจุบัน</th>
+                    <th class="py-3 px-4 text-center">การดำเนินการ (Action)</th>
+                  </tr>
+                </thead>
+                <tbody id="adminBookingsTableBody" class="divide-y divide-slate-100 text-slate-700">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+            <div id="adminBookingsEmptyMsg" class="hidden text-center py-12 text-slate-400 text-xs">
+              <i class="fa-regular fa-calendar-check text-3xl mb-2 text-slate-300 block"></i>
+              ไม่มีรายการคำขอจองที่รอการจัดการ
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtab 2: Rooms Management -->
+        <div id="adminRoomsSubSection" class="hidden space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="adminRoomsGrid">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Subtab 3: Overview Reports & Statistics -->
+        <div id="adminOverviewSubSection" class="hidden space-y-4">
+          <!-- Header -->
         <div class="bg-white rounded-2xl p-6 border border-slate-200 flex justify-between items-center shadow-sm">
           <div class="flex items-center space-x-4">
             <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 border border-cyan-100 flex items-center justify-center text-xl font-bold">
@@ -672,69 +745,6 @@
             ไม่มีรายการจองตรงตามเงื่อนไขที่เลือก
           </div>
         </div>
-      </div>
-
-      <!-- TAB 4: ADMIN PANEL WORKSPACE -->
-      <div id="dtMainAdminSection" class="hidden space-y-6 w-full">
-        <!-- Admin Top Bar -->
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 flex flex-wrap justify-between items-center gap-4 shadow-sm">
-          <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-xl font-bold">
-              <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <div>
-              <h2 class="text-xl font-bold text-slate-900">ผู้ดูแลระบบ (Admin Workspace)</h2>
-              <p class="text-xs text-slate-500 mt-0.5">อนุมัติ/ยกเลิกคำขอจองห้องประชุม และจัดการข้อมูลห้องประชุม</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button type="button" onclick="switchAdminSubTab('bookings')" id="adminSubTabBookingsBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs">จัดการคำขอจอง</button>
-            <button type="button" onclick="switchAdminSubTab('rooms')" id="adminSubTabRoomsBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">ข้อมูลห้องประชุม (5 ห้อง)</button>
-          </div>
-        </div>
-
-        <!-- Subtab 1: Bookings Approvals & Management -->
-        <div id="adminBookingsSubSection" class="space-y-4">
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
-              <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-gavel text-amber-600"></i>
-                <span>รายการคำขอจองทั้งหมด (คลิกเพื่ออนุมัติ / ยกเลิก)</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <input type="text" id="adminSearchInput" oninput="filterAdminBookings()" placeholder="ค้นหารายการจอง..." class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500">
-              </div>
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs border-collapse">
-                <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th class="py-3 px-4">รหัส / วันเวลา</th>
-                    <th class="py-3 px-4">ห้องประชุม</th>
-                    <th class="py-3 px-4">ผู้ขอจอง / เบอร์</th>
-                    <th class="py-3 px-4">วัตถุประสงค์</th>
-                    <th class="py-3 px-4 text-center">สถานะปัจจุบัน</th>
-                    <th class="py-3 px-4 text-center">การดำเนินการ (Action)</th>
-                  </tr>
-                </thead>
-                <tbody id="adminBookingsTableBody" class="divide-y divide-slate-100 text-slate-700">
-                  <!-- Rendered dynamically -->
-                </tbody>
-              </table>
-            </div>
-            <div id="adminBookingsEmptyMsg" class="hidden text-center py-12 text-slate-400 text-xs">
-              <i class="fa-regular fa-calendar-check text-3xl mb-2 text-slate-300 block"></i>
-              ไม่มีรายการคำขอจองที่รอการจัดการ
-            </div>
-          </div>
-        </div>
-
-        <!-- Subtab 2: Rooms Management -->
-        <div id="adminRoomsSubSection" class="hidden space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="adminRoomsGrid">
-            <!-- Rendered dynamically -->
-          </div>
         </div>
       </div>
 
@@ -748,11 +758,17 @@
     
     <!-- MOBILE TOP BRAND HEADER -->
     <div class="bg-white px-4 py-3 border-b border-slate-200 flex items-center justify-between shadow-2xs sticky top-0 z-20">
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="goToMobileStepCalendar()">
         <img src="https://drive.google.com/thumbnail?id=1K9GBW7ukzes0ekrPMwyKOJDwG5w12hpu&sz=w600" alt="LOGO" class="h-8 w-auto object-contain">
+        <div>
+          <div class="text-xs font-bold text-slate-800 leading-tight">ระบบจองห้องประชุม</div>
+          <div class="text-[10px] text-slate-500 font-medium">รพ.พิษณุเวช พิจิตร</div>
+        </div>
       </div>
-      <div class="text-[10px] font-bold text-cyan-700 bg-cyan-50 border border-cyan-100 px-2.5 py-0.5 rounded-full">
-        ระบบจองห้องประชุม
+      <div class="flex items-center space-x-2">
+        <button id="mbAdminGearBtn" onclick="handleAdminGearClick()" class="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-cyan-700 flex items-center justify-center transition shadow-2xs" title="ผู้ดูแลระบบ (Admin)">
+          <i class="fa-solid fa-gear text-sm"></i>
+        </button>
       </div>
     </div>
 
@@ -769,6 +785,14 @@
             <button onclick="changeCalMonth(-1)" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-600 flex items-center justify-center text-xs"><i class="fa-solid fa-chevron-left"></i></button>
             <button onclick="changeCalMonth(1)" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-600 flex items-center justify-center text-xs"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
+        </div>
+
+        <!-- Primary Action Button: + จองห้องประชุม (Mobile) -->
+        <div class="pt-1">
+          <button onclick="goToMobileStepBooking()" class="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xs rounded-xl shadow-md shadow-cyan-600/20 active:scale-95 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-calendar-plus text-sm"></i>
+            <span>+ จองห้องประชุม</span>
+          </button>
         </div>
 
         <div class="grid grid-cols-7 text-center text-xs font-medium text-slate-400 pb-1">
@@ -810,6 +834,14 @@
 
     <!-- STEP 3: MOBILE BOOKING FORM -->
     <div id="mbStepBooking" class="hidden p-4 space-y-4">
+      <!-- Back to Calendar Top Navigation -->
+      <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+        <button type="button" onclick="goToMobileStepCalendar()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95">
+          <i class="fa-solid fa-arrow-left text-[11px]"></i>
+          <span>กลับหน้าปฏิทิน</span>
+        </button>
+        <span class="text-xs font-bold text-cyan-700">แบบฟอร์มจองห้องประชุม</span>
+      </div>
       <div class="flex items-center space-x-3 pb-2 border-b border-slate-200">
         <button onclick="goToMobileStepCalendar()" class="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-sm"><i class="fa-solid fa-arrow-left"></i></button>
         <div>
@@ -896,6 +928,14 @@
 
     <!-- STEP 4: MOBILE ADMIN SCREEN -->
     <div id="mbStepAdmin" class="hidden p-4 space-y-4">
+      <!-- Back to Calendar Top Navigation -->
+      <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+        <button type="button" onclick="goToMobileStepCalendar()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95">
+          <i class="fa-solid fa-arrow-left text-[11px]"></i>
+          <span>กลับหน้าปฏิทิน</span>
+        </button>
+        <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Admin Mode</span>
+      </div>
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
         <div>
           <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
@@ -919,7 +959,7 @@
     </div>
 
     <!-- MOBILE BOTTOM NAV -->
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 flex justify-around py-2.5 shadow-lg">
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 flex justify-around py-2.5 shadow-lg hidden">
       <button onclick="goToMobileStepCalendar()" id="mbNavCalBtn" class="flex flex-col items-center text-cyan-600 font-bold text-[10px]">
         <i class="fa-solid fa-calendar-days text-xl mb-0.5"></i>
         <span>ปฏิทิน</span>
@@ -1682,6 +1722,8 @@
       document.getElementById('mbStepCalendar').classList.remove('hidden');
       document.getElementById('mbStepBooking').classList.add('hidden');
       document.getElementById('mbStepOverview').classList.add('hidden');
+      const mbAdmin = document.getElementById('mbStepAdmin');
+      if (mbAdmin) mbAdmin.classList.add('hidden');
       setMobileNavActive('mbNavCalBtn');
       backToCalendarGrid();
     }
@@ -1690,6 +1732,8 @@
       document.getElementById('mbStepCalendar').classList.add('hidden');
       document.getElementById('mbStepBooking').classList.remove('hidden');
       document.getElementById('mbStepOverview').classList.add('hidden');
+      const mbAdmin = document.getElementById('mbStepAdmin');
+      if (mbAdmin) mbAdmin.classList.add('hidden');
       setMobileNavActive('mbNavBookingBtn');
 
       const mbContainer = document.getElementById('mbBookingDatesList');
@@ -2109,6 +2153,7 @@
     function closeBookingSlipModal() {
       const modal = document.getElementById('bookingSlipModal');
       if (modal) modal.classList.add('hidden');
+      backToCalendar();
     }
 
     function printBookingSlip() {
@@ -2129,21 +2174,35 @@
     function switchAdminSubTab(sub) {
       const bSec = document.getElementById('adminBookingsSubSection');
       const rSec = document.getElementById('adminRoomsSubSection');
+      const oSec = document.getElementById('adminOverviewSubSection');
       const bBtn = document.getElementById('adminSubTabBookingsBtn');
       const rBtn = document.getElementById('adminSubTabRoomsBtn');
+      const oBtn = document.getElementById('adminSubTabOverviewBtn');
 
       if (sub === 'bookings') {
         if (bSec) bSec.classList.remove('hidden');
         if (rSec) rSec.classList.add('hidden');
+        if (oSec) oSec.classList.add('hidden');
         if (bBtn) bBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs';
         if (rBtn) rBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        if (oBtn) oBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
         renderAdminBookings();
-      } else {
+      } else if (sub === 'rooms') {
         if (bSec) bSec.classList.add('hidden');
         if (rSec) rSec.classList.remove('hidden');
+        if (oSec) oSec.classList.add('hidden');
         if (rBtn) rBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs';
         if (bBtn) bBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        if (oBtn) oBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
         renderAdminRooms();
+      } else if (sub === 'overview') {
+        if (bSec) bSec.classList.add('hidden');
+        if (rSec) rSec.classList.add('hidden');
+        if (oSec) oSec.classList.remove('hidden');
+        if (oBtn) oBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs';
+        if (bBtn) bBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        if (rBtn) rBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        loadOverviewData();
       }
     }
 
@@ -3293,6 +3352,60 @@
           backToCalendarGrid();
         }, 1500);
       }
+    }
+
+    
+    /**
+     * คลิกรูปเฟืองเพื่อเข้าสู่ระบบผู้ดูแล (Admin System Access)
+     */
+    function handleAdminGearClick() {
+      if (appMode === 'desktop') {
+        if (!isAdminAuthenticated) {
+          openPasscodeModal();
+        } else {
+          showAdminWorkspace();
+        }
+      } else {
+        goToMobileStepAdmin();
+      }
+    }
+
+    /**
+     * เปิดหน้าแบบฟอร์มจองห้องประชุมโดยตรง
+     */
+    function openBookingForm(dateStr) {
+      if (dateStr) {
+        selectedDateStr = dateStr;
+        const container = document.getElementById(appMode === 'desktop' ? 'bookingDatesList' : 'mbBookingDatesList');
+        if (container) {
+          container.innerHTML = '';
+          if (appMode === 'desktop') {
+            addBookingDateRow(dateStr, '08:00', '12:00');
+          } else {
+            addMbBookingDateRow(dateStr, '08:00', '12:00');
+          }
+        }
+      }
+      if (appMode === 'desktop') {
+        switchDesktopTab('booking');
+      } else {
+        goToMobileStepBooking();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /**
+     * กลับหน้าปฏิทินหลัก (Home Calendar View)
+     */
+    function backToCalendar() {
+      if (appMode === 'desktop') {
+        switchDesktopTab('calendar');
+        backToCalendarGrid();
+      } else {
+        goToMobileStepCalendar();
+        backToCalendarGrid();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function switchDesktopTab(tab) {
