@@ -762,12 +762,146 @@
 
 
   <!-- ============================================================== -->
-  <!-- JAVASCRIPT AUTO-DETECTION ENGINE                               -->
+  <!-- JAVASCRIPT AUTO-DETECTION ENGINE & CLIENT BRIDGE               -->
   <!-- ============================================================== -->
   <script>
-    const serverPageMode = "<?= pageMode ?>";
+    // GitHub Pages & Standalone Client Bridge (เชื่อมต่อ Supabase & GAS Mirroring อัตโนมัติเมื่ออยู่นอก Apps Script)
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      (function() {
+        const SUPABASE_URL = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGmA9Cl_rco-I7xHm_K1leef44nZbrDDNddxJaE-FQrakME21e5QZ3xB282r4hpC9m/exec';
+
+        window.google = window.google || {};
+        window.google.script = window.google.script || {};
+        window.google.script.run = {
+          _success: null,
+          _failure: null,
+          withSuccessHandler: function(fn) {
+            const runner = Object.create(this);
+            runner._success = fn;
+            return runner;
+          },
+          withFailureHandler: function(fn) {
+            const runner = Object.create(this);
+            runner._failure = fn;
+            return runner;
+          },
+          getOverviewData: async function(period, year, month) {
+            try {
+              const res = await fetch(`${SUPABASE_URL}/rest/v1/room_bookings?order=booking_date.asc,start_time.asc`, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+              });
+              const data = await res.json();
+              const bookings = (data || []).map(b => ({
+                id: b.booking_id,
+                bookingId: b.booking_id,
+                roomName: b.room_name,
+                bookingDate: b.booking_date,
+                startTime: (b.start_time || '').substring(0, 5),
+                endTime: (b.end_time || '').substring(0, 5),
+                bookedBy: b.booked_by || b.purpose,
+                department: b.department,
+                phone: b.phone,
+                purpose: b.purpose || b.booked_by,
+                meetingType: b.meeting_type,
+                attendees: b.attendees,
+                equipment: b.equipment,
+                seatingLayout: b.seating_layout,
+                status: b.status || 'จองเรียบร้อย'
+              }));
+              if (this._success) this._success({ success: true, bookings: bookings });
+            } catch (err) {
+              console.warn('Bridge getOverviewData error:', err);
+              if (this._success) this._success({ success: true, bookings: [] });
+            }
+          },
+          getPublicData: async function(dateStr) {
+            try {
+              const res = await fetch(`${SUPABASE_URL}/rest/v1/room_bookings?booking_date=eq.${dateStr}&order=start_time.asc`, {
+                headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+              });
+              const data = await res.json();
+              const bookings = (data || []).map(b => ({
+                id: b.booking_id,
+                bookingId: b.booking_id,
+                roomName: b.room_name,
+                bookingDate: b.booking_date,
+                startTime: (b.start_time || '').substring(0, 5),
+                endTime: (b.end_time || '').substring(0, 5),
+                bookedBy: b.booked_by || b.purpose,
+                department: b.department,
+                phone: b.phone,
+                purpose: b.purpose || b.booked_by,
+                meetingType: b.meeting_type,
+                attendees: b.attendees,
+                equipment: b.equipment,
+                seatingLayout: b.seating_layout,
+                status: b.status || 'จองเรียบร้อย'
+              }));
+              if (this._success) this._success({ success: true, selectedDate: dateStr, rooms: defaultRoomsList, bookings: bookings });
+            } catch (err) {
+              console.warn('Bridge getPublicData error:', err);
+              if (this._success) this._success({ success: true, selectedDate: dateStr, rooms: defaultRoomsList, bookings: [] });
+            }
+          },
+          submitBooking: async function(payload) {
+            try {
+              const bookingItems = payload.dates || [{ bookingDate: payload.bookingDate, startTime: payload.startTime, endTime: payload.endTime }];
+              for (const item of bookingItems) {
+                const bId = 'BK-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random() * 900 + 100);
+                await fetch(`${SUPABASE_URL}/rest/v1/room_bookings`, {
+                  method: 'POST',
+                  headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                  },
+                  body: JSON.stringify({
+                    booking_id: bId,
+                    room_name: payload.roomName,
+                    booking_date: item.bookingDate,
+                    start_time: item.startTime,
+                    end_time: item.endTime,
+                    booked_by: payload.bookedBy || payload.purpose,
+                    department: payload.department,
+                    phone: payload.phone || '',
+                    purpose: payload.purpose || payload.bookedBy,
+                    meeting_type: payload.meetingType || 'การประชุมภายใน',
+                    attendees: parseInt(payload.attendees) || 1,
+                    equipment: Array.isArray(payload.equipment) ? payload.equipment.join(', ') : (payload.equipment || ''),
+                    seating_layout: payload.seatingLayout || 'Classroom',
+                    status: 'จองเรียบร้อย'
+                  })
+                });
+              }
+              // ส่งข้อมูลต่อไปยัง GAS Web App เพื่อบันทึก Google Sheet และแจ้งเตือน LINE Bot
+              try {
+                fetch(GAS_URL, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'submitBooking', data: payload })
+                });
+              } catch (gasErr) {
+                console.warn('GAS mirror fetch error:', gasErr);
+              }
+
+              if (this._success) this._success({ success: true, message: 'บันทึกแบบฟอร์มการจองเรียบร้อยแล้ว (สถานะ: จองเรียบร้อย)' });
+            } catch (err) {
+              console.error('Bridge submitBooking error:', err);
+              if (this._failure) this._failure(err);
+            }
+          }
+        };
+      })();
+    }
+
+    const serverPageMode = "<?= typeof pageMode !== 'undefined' ? pageMode : 'user' ?>";
+    const effectivePageMode = (serverPageMode && !serverPageMode.startsWith('<?')) ? serverPageMode : ((new URLSearchParams(window.location.search)).get('mode') || 'user');
     const urlParams = new URLSearchParams(window.location.search);
-    const isAdminPage = (typeof serverPageMode !== 'undefined' && serverPageMode === 'admin') || urlParams.get('mode') === 'admin' || urlParams.get('page') === 'admin';
+    const isAdminPage = effectivePageMode === 'admin' || urlParams.get('mode') === 'admin' || urlParams.get('page') === 'admin';
 
     let appMode = 'desktop';
     const initNow = new Date();
