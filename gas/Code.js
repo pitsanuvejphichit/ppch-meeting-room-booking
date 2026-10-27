@@ -45,9 +45,29 @@ function doPost(e) {
     }
     const contents = JSON.parse(e.postData.contents);
 
-    // 1. ตรวจสอบว่าเป็นการส่งคำขอจองห้องประชุมผ่าน REST API หรือไม่
+    // 1. ตรวจสอบว่าเป็นการส่งคำขอผ่าน REST API หรือไม่
     if (contents.action === 'submitBooking' && contents.data) {
       const res = submitBooking(contents.data);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'adminUpdateBookingStatus') {
+      const res = adminUpdateBookingStatus(contents.passcode, contents.bookingId, contents.newStatus, contents.remarks);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'adminDeleteBooking') {
+      const res = adminDeleteBooking(contents.passcode, contents.bookingId);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'adminUpdateRoomStatus') {
+      const res = adminUpdateRoomStatus(contents.passcode, contents.roomId, contents.newStatus);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'adminUpdateRoomDetails') {
+      const res = adminUpdateRoomDetails(contents.passcode, contents.roomId, contents.capacity, contents.facilities, contents.color);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'getAdminDashboardData') {
+      const res = getAdminDashboardData(contents.passcode);
       return createJsonResponse(res);
     }
 
@@ -659,7 +679,7 @@ function timeToMinutes(tStr) {
 }
 
 /**
- * ส่งการแจ้งเตือนไปยังผู้ดูแลระบบผ่าน LINE Bot Messaging API
+ * ส่งการแจ้งเตือนไปยังผู้ดูแลระบบผ่าน LINE Bot Flex Message API
  */
 function sendBookingNotificationToLine(payload, items) {
   try {
@@ -672,25 +692,192 @@ function sendBookingNotificationToLine(payload, items) {
       return;
     }
 
-    // สร้างข้อความแจ้งเตือนภาษาไทย
-    let msg = `\n🔔 มีการจองห้องประชุมใหม่! (จองเรียบร้อย)\n`;
-    msg += `------------------------\n`;
-    msg += `ห้องประชุม: ${payload.roomName.replace('ห้องประชุมชั้น ', 'ชั้น ').replace('ห้องประชุม ', 'ชั้น ')}\n`;
-    msg += `ผู้ขอจอง: ${payload.bookedBy} (${payload.department})\n`;
-    msg += `เบอร์โทร: ${payload.phone || '-'}\n`;
-    msg += `วัตถุประสงค์: ${payload.purpose}\n`;
-    msg += `ผู้เข้าร่วม: ${payload.attendees} คน\n`;
-    msg += `ผังจัดห้อง: ${payload.seatingLayout || 'นักเรียน'}\n`;
-    msg += `อุปกรณ์: ${payload.equipment || '-'}\n`;
-    msg += `ประเภท: ${payload.meetingType || 'ภายใน'}\n`;
-    msg += `------------------------\n\n`;
+    // สร้างกล่องแสดงวัน-เวลาแบบไดนามิก
+    const scheduleBoxes = (items || []).map((it, idx) => ({
+      type: "box",
+      layout: "horizontal",
+      backgroundColor: "#f8fafc",
+      cornerRadius: "md",
+      paddingAll: "8px",
+      margin: "xs",
+      contents: [
+        {
+          type: "text",
+          text: `📅 ${it.bookingDate}`,
+          size: "xs",
+          color: "#0369a1",
+          weight: "bold",
+          flex: 4
+        },
+        {
+          type: "text",
+          text: `⏰ ${it.startTime} - ${it.endTime} น.`,
+          size: "xs",
+          color: "#334155",
+          weight: "bold",
+          align: "end",
+          flex: 4
+        }
+      ]
+    }));
 
-    msg += `🗓️ รายการวันและเวลาใช้งาน:\n`;
-    items.forEach((item, index) => {
-      msg += `${index + 1}. วันที่ ${item.bookingDate} เวลา ${item.startTime} - ${item.endTime} น.\n`;
-    });
+    const flexMessage = {
+      type: "flex",
+      altText: `🔔 แจ้งเตือนการจองห้องประชุมใหม่: ${payload.roomName} (${(items[0] && items[0].bookingDate) || payload.bookingDate})`,
+      contents: {
+        type: "bubble",
+        size: "mega",
+        header: {
+          type: "box",
+          layout: "vertical",
+          backgroundColor: "#1e3a8a",
+          paddingAll: "16px",
+          contents: [
+            {
+              type: "text",
+              text: "โรงพยาบาลพิษณุเวช พิจิตร (PPCH)",
+              color: "#93c5fd",
+              size: "xs",
+              weight: "bold"
+            },
+            {
+              type: "text",
+              text: "🔔 มีการจองห้องประชุมใหม่!",
+              color: "#ffffff",
+              size: "md",
+              weight: "bold",
+              margin: "xs"
+            }
+          ]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          paddingAll: "16px",
+          spacing: "sm",
+          contents: [
+            {
+              type: "text",
+              text: payload.roomName,
+              weight: "bold",
+              size: "lg",
+              color: "#0f172a",
+              wrap: true
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              backgroundColor: "#f0fdf4",
+              cornerRadius: "sm",
+              paddingAll: "6px",
+              contents: [
+                {
+                  type: "text",
+                  text: "สถานะ: จองเรียบร้อย (พร้อมใช้งาน)",
+                  color: "#16a34a",
+                  weight: "bold",
+                  size: "xs"
+                }
+              ]
+            },
+            {
+              type: "separator",
+              margin: "md"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "md",
+              spacing: "xs",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "ผู้ขอจอง:", size: "xs", color: "#64748b", flex: 3 },
+                    { type: "text", text: `${payload.bookedBy} (${payload.department})`, size: "xs", color: "#0f172a", weight: "bold", flex: 7, wrap: true }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "เบอร์ติดต่อ:", size: "xs", color: "#64748b", flex: 3 },
+                    { type: "text", text: payload.phone || "-", size: "xs", color: "#0f172a", flex: 7 }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "วัตถุประสงค์:", size: "xs", color: "#64748b", flex: 3 },
+                    { type: "text", text: payload.purpose || "-", size: "xs", color: "#0f172a", flex: 7, wrap: true }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "ผู้เข้าร่วม:", size: "xs", color: "#64748b", flex: 3 },
+                    { type: "text", text: `${payload.attendees} คน (${payload.meetingType || 'ภายใน'})`, size: "xs", color: "#0f172a", flex: 7 }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "ผังห้อง:", size: "xs", color: "#64748b", flex: 3 },
+                    { type: "text", text: payload.seatingLayout || "Classroom", size: "xs", color: "#0f172a", flex: 7 }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    { type: "text", text: "อุปกรณ์:", size: "xs", color: "#64748b", flex: 3 },
+                    { type: "text", text: payload.equipment || "ไม่มีอุปกรณ์เพิ่มเติม", size: "xs", color: "#0f172a", flex: 7, wrap: true }
+                  ]
+                }
+              ]
+            },
+            {
+              type: "separator",
+              margin: "md"
+            },
+            {
+              type: "text",
+              text: "🗓️ กำหนดการใช้งาน:",
+              size: "xs",
+              weight: "bold",
+              color: "#0369a1",
+              margin: "xs"
+            },
+            ...scheduleBoxes
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "xs",
+          paddingAll: "12px",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              color: "#0284c7",
+              height: "sm",
+              action: {
+                type: "uri",
+                label: "🌐 เปิดดูปฏิทินห้องประชุม",
+                uri: "https://pitsanuvejphichit.github.io/ppch-meeting-room-booking/"
+              }
+            }
+          ]
+        }
+      }
+    };
 
-    // ส่งผ่าน LINE Messaging API
+    // ส่ง Flex Message
     const options = {
       method: 'post',
       contentType: 'application/json',
@@ -699,20 +886,190 @@ function sendBookingNotificationToLine(payload, items) {
       },
       payload: JSON.stringify({
         to: adminUserId,
-        messages: [
-          {
-            type: 'text',
-            text: msg
-          }
-        ]
+        messages: [flexMessage]
       }),
       muteHttpExceptions: true
     };
     const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', options);
-    Logger.log('LINE Bot Push response: ' + response.getContentText());
+    Logger.log('LINE Flex Message response: ' + response.getContentText());
   } catch (err) {
-    Logger.log('Failed to send LINE notification: ' + err.toString());
+    Logger.log('Failed to send LINE Flex notification: ' + err.toString());
   }
+}
+
+/**
+ * อัปเดตสถานะการจอง (Approve / Cancel / Complete)
+ */
+function adminUpdateBookingStatus(passcode, bookingId, newStatus, remarks) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Bookings');
+  if (!sheet) return { success: false, message: 'ไม่พบแผ่นงาน Bookings' };
+
+  const data = sheet.getDataRange().getValues();
+  let foundRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(bookingId).trim()) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+
+  if (foundRow === -1) {
+    return { success: false, message: 'ไม่พบรายการจองรหัส ' + bookingId };
+  }
+
+  // อัปเดตคอลัมน์ที่ 15 (Status)
+  sheet.getRange(foundRow, 15).setValue(newStatus);
+
+  // Sync กับ Supabase
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+    UrlFetchApp.fetch(`${supabaseUrl}/rest/v1/room_bookings?booking_id=eq.${bookingId}`, {
+      method: 'PATCH',
+      contentType: 'application/json',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      payload: JSON.stringify({ status: newStatus }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    Logger.log('Supabase sync error on status update: ' + err.toString());
+  }
+
+  return { success: true, message: `อัปเดตสถานะเป็น "${newStatus}" เรียบร้อยแล้ว` };
+}
+
+/**
+ * ลบรายการจอง (Delete Booking)
+ */
+function adminDeleteBooking(passcode, bookingId) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Bookings');
+  if (!sheet) return { success: false, message: 'ไม่พบแผ่นงาน Bookings' };
+
+  const data = sheet.getDataRange().getValues();
+  let foundRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(bookingId).trim()) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+
+  if (foundRow !== -1) {
+    sheet.deleteRow(foundRow);
+  }
+
+  // ลบใน Supabase
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+    UrlFetchApp.fetch(`${supabaseUrl}/rest/v1/room_bookings?booking_id=eq.${bookingId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    Logger.log('Supabase sync error on delete: ' + err.toString());
+  }
+
+  return { success: true, message: 'ลบรายการจองเรียบร้อยแล้ว' };
+}
+
+/**
+ * สลับ/อัปเดตสถานะห้องประชุม (พร้อมใช้งาน / ปิดปรับปรุง)
+ */
+function adminUpdateRoomStatus(passcode, roomId, newStatus) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Rooms');
+  if (!sheet) return { success: false, message: 'ไม่พบแผ่นงาน Rooms' };
+
+  const data = sheet.getDataRange().getValues();
+  let foundRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(roomId).trim() || String(data[i][1]).trim() === String(roomId).trim()) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+
+  if (foundRow !== -1) {
+    sheet.getRange(foundRow, 7).setValue(newStatus);
+  }
+
+  // Sync Supabase
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+    UrlFetchApp.fetch(`${supabaseUrl}/rest/v1/meeting_rooms?room_id=eq.${roomId}`, {
+      method: 'PATCH',
+      contentType: 'application/json',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      payload: JSON.stringify({ is_active: (newStatus === 'พร้อมใช้งาน') }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {}
+
+  return { success: true, message: `อัปเดตสถานะห้องเป็น "${newStatus}" เรียบร้อยแล้ว` };
+}
+
+/**
+ * แก้ไขรายละเอียดห้องประชุม (ความจุ, อุปกรณ์ประจำห้อง, ธีมสี)
+ */
+function adminUpdateRoomDetails(passcode, roomId, capacity, facilities, color) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Rooms');
+  if (!sheet) return { success: false, message: 'ไม่พบแผ่นงาน Rooms' };
+
+  const data = sheet.getDataRange().getValues();
+  let foundRow = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(roomId).trim() || String(data[i][1]).trim() === String(roomId).trim()) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+
+  if (foundRow !== -1) {
+    if (capacity) sheet.getRange(foundRow, 3).setValue(capacity);
+    if (facilities) sheet.getRange(foundRow, 5).setValue(facilities);
+    if (color) sheet.getRange(foundRow, 6).setValue(color);
+  }
+
+  return { success: true, message: 'บันทึกข้อมูลห้องประชุมเรียบร้อยแล้ว' };
 }
 
 /**
