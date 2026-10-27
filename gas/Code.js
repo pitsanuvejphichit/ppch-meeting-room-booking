@@ -1,331 +1,739 @@
 /**
- * PPCH Meeting Room Booking System - Google Apps Script Backend
- * โรงพยาบาลพิษณุเวช พิจิตร
- * Auto Mirroring & Backup to Google Sheets
+ * ระบบจองห้องประชุม PPCH - โรงพยาบาลพิษณุเวช พิจิตร
+ * Backend Logic (Google Apps Script)
+ * Spreadsheet ID: 1WAykM8JPdgX43S219hBNOB1Eq-jWgT91Zc3jtng3YL4
  */
 
-const CONFIG = {
-  SPREADSHEET_NAME: "PPCH - ระบบจองห้องประชุม",
-  SHEET_BOOKINGS: "การจองห้องประชุม",
-  SHEET_ROOMS: "ข้อมูลห้องประชุม",
-  SHEET_CANCELLED: "ประวัติการยกเลิก",
-  SUPABASE_URL: "https://jauxlzjmhtnncrwrloyr.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0"
-};
+const SPREADSHEET_ID = "1WAykM8JPdgX43S219hBNOB1Eq-jWgT91Zc3jtng3YL4";
+const SUPABASE_URL = "https://jauxlzjmhtnncrwrloyr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0";
 
-/**
- * Handle HTTP GET Requests
- */
 function doGet(e) {
-  const action = (e && e.parameter && e.parameter.action) || 'ping';
-  
-  if (action === 'get_spreadsheet_info') {
-    const ss = getOrCreateSpreadsheet();
-    return createJsonResponse({
-      success: true,
-      spreadsheetId: ss.getId(),
-      spreadsheetUrl: ss.getUrl(),
-      name: ss.getName()
-    });
+  // ตรวจสอบและอัปเดตหัวตารางของแผ่นงาน Bookings โดยอัตโนมัติเมื่อมีการเรียกหน้าเว็บแอป
+  ensureCorrectHeaders();
+
+  // รองรับ REST API สำหรับ External Client / GitHub Pages
+  const action = (e && e.parameter && e.parameter.action) || '';
+  if (action === 'getPublicData') {
+    const targetDate = e.parameter.date || formatDate(new Date());
+    const res = getPublicData(targetDate);
+    return createJsonResponse(res);
+  }
+  if (action === 'getOverviewData') {
+    const pType = e.parameter.period || 'month';
+    const year = e.parameter.year || new Date().getFullYear();
+    const month = e.parameter.month || new Date().getMonth();
+    const res = getOverviewData(pType, year, month);
+    return createJsonResponse(res);
   }
 
-  if (action === 'get_bookings') {
-    const bookings = getBookingsFromSheet();
-    return createJsonResponse({
-      success: true,
-      data: bookings
-    });
-  }
+  const mode = (e && e.parameter && (e.parameter.mode === 'admin' || e.parameter.page === 'admin')) ? 'admin' : 'user';
 
-  return createJsonResponse({
-    success: true,
-    message: "PPCH Meeting Room Backend API Online",
-    timestamp: new Date().toISOString()
-  });
+  const template = HtmlService.createTemplateFromFile('Index');
+  template.pageMode = mode;
+
+  return template.evaluate()
+    .setTitle(mode === 'admin' ? 'ผู้ดูแลระบบ - จองห้องประชุม PPCH' : 'ระบบจองห้องประชุม - โรงพยาบาลพิษณุเวช พิจิตร')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+}
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return createJsonResponse({ status: 'no data' });
+    }
+    const contents = JSON.parse(e.postData.contents);
+
+    // 1. ตรวจสอบว่าเป็นการส่งคำขอจองห้องประชุมผ่าน REST API หรือไม่
+    if (contents.action === 'submitBooking' && contents.data) {
+      const res = submitBooking(contents.data);
+      return createJsonResponse(res);
+    }
+
+    // 2. LINE Webhook
+    const events = contents.events;
+    if (events && events.length > 0) {
+      for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        if (event.type === 'message' && event.message && event.message.type === 'text') {
+          const text = String(event.message.text).trim();
+          if (text === '/id' || text === '!id' || text === 'เช็คไอดี') {
+            const settings = getSettingsDict();
+            const channelToken = settings.LINE_CHANNEL_ACCESS_TOKEN;
+            if (channelToken) {
+              let replyText = `🔎 ข้อมูลการเชื่อมต่อ LINE:\n`;
+              replyText += `• User ID ของคุณ: ${event.source.userId || 'ไม่พบ'}\n`;
+              if (event.source.type === 'group') {
+                replyText += `• Group ID ของกลุ่มนี้: ${event.source.groupId || 'ไม่พบ'}\n`;
+              } else if (event.source.type === 'room') {
+                replyText += `• Room ID ของห้องแชทนี้: ${event.source.roomId || 'ไม่พบ'}\n`;
+              }
+              replyText += `\nคัดลอก ID ข้างต้นไปใส่ในแถว LINE_ADMIN_USER_ID ของชีท Settings ได้เลยครับ`;
+              replyLineMessage(channelToken, event.replyToken, replyText);
+            }
+          }
+        }
+      }
+    }
+    return createJsonResponse({ status: 'success' });
+  } catch (err) {
+    return createJsonResponse({ status: 'error', message: err.toString() });
+  }
+}
+
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSpreadsheet() {
+  if (SPREADSHEET_ID && SPREADSHEET_ID.length > 10) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return SpreadsheetApp.getActiveSpreadsheet();
 }
 
 /**
- * Handle HTTP POST Requests
+ * ตรวจสอบและอัปเดตหัวตาราง (Headers) ของแผ่นงาน Bookings ให้เป็น 15 คอลัมน์ที่ใช้งานจริง
+ * และลบคอลัมน์ที่ไม่จำเป็นออกทั้งหมด
  */
-function doPost(e) {
+function ensureCorrectHeaders() {
+  try {
+    const ss = getSpreadsheet();
+    const sheet = ss.getSheetByName('Bookings');
+    if (sheet) {
+      const lastCol = sheet.getLastColumn();
+      
+      const newHeaders = [
+        'Booking ID', 'Timestamp', 'Room Name', 'Booking Date', 'Start Time', 'End Time',
+        'Booked By', 'Department', 'Phone', 'Purpose', 'Meeting Type', 'Attendees',
+        'Equipment', 'Seating Layout', 'Status'
+      ];
+
+      const currentHeaders = lastCol > 0 ? sheet.getRange(1, 1, 1, Math.max(lastCol, 15)).getValues()[0] : [];
+      
+      if (currentHeaders[14] !== 'Status' || lastCol > 15) {
+        // อัปเดตหัวตาราง 15 คอลัมน์
+        sheet.getRange(1, 1, 1, 15).setValues([newHeaders])
+          .setFontWeight('bold')
+          .setBackground('#0284c7')
+          .setFontColor('#ffffff');
+          
+        // ลบคอลัมน์ส่วนเกิน (คอลัมน์ 16 ขึ้นไป)
+        if (sheet.getMaxColumns() > 15) {
+          const extraCols = sheet.getMaxColumns() - 15;
+          sheet.deleteColumns(16, extraCols);
+        }
+        
+        Logger.log('Successfully cleaned up Bookings sheet columns to 15 active columns.');
+      }
+    }
+  } catch (err) {
+    Logger.log('Failed to ensure correct headers: ' + err.toString());
+  }
+}
+
+/**
+ * สร้างตารางตามโครงสร้างจริงจากแบบฟอร์ม
+ */
+function initDatabase() {
+  const ss = getSpreadsheet();
+  
+  // 1. Bookings Sheet
+  let bookingsSheet = ss.getSheetByName('Bookings');
+  if (!bookingsSheet) bookingsSheet = ss.insertSheet('Bookings');
+  
+  if (bookingsSheet.getLastRow() === 0) {
+    bookingsSheet.getRange(1, 1, 1, 15).setValues([[
+      'Booking ID', 'Timestamp', 'Room Name', 'Booking Date', 'Start Time', 'End Time',
+      'Booked By', 'Department', 'Phone', 'Purpose', 'Meeting Type', 'Attendees',
+      'Equipment', 'Seating Layout', 'Status'
+    ]]).setFontWeight('bold').setBackground('#0284c7').setFontColor('#ffffff');
+  }
+
+  // 2. Rooms Sheet
+  let roomsSheet = ss.getSheetByName('Rooms');
+  if (!roomsSheet) roomsSheet = ss.insertSheet('Rooms');
+  
+  if (roomsSheet.getLastRow() === 0) {
+    roomsSheet.getRange(1, 1, 1, 7).setValues([[
+      'Room ID', 'Room Name', 'Capacity', 'Location', 'Facilities', 'Color Theme', 'Status'
+    ]]).setFontWeight('bold').setBackground('#0284c7').setFontColor('#ffffff');
+    
+    const initialRooms = [
+      ['RM-001', 'ห้องประชุมชั้น 5 (ห้องใหญ่)', '50-100 คน', 'ชั้น 5', 'โปรเจคเตอร์, ไมโครโฟน, ระบบเสียง', '#0284c7', 'พร้อมใช้งาน'],
+      ['RM-002', 'ห้องประชุมชั้น 5 (ห้องม่าน)', '20-30 คน', 'ชั้น 5', 'โปรเจคเตอร์, ไวท์บอร์ด', '#059669', 'พร้อมใช้งาน'],
+      ['RM-003', 'ห้องประชุมชั้น 5 (ห้องกระจก)', '15-20 คน', 'ชั้น 5', 'สมาร์ททีวี, กระดานกระจก', '#7c3aed', 'พร้อมใช้งาน'],
+      ['RM-004', 'ห้องประชุมชั้น 6', '30-50 คน', 'ชั้น 6', 'โปรเจคเตอร์, เครื่องเสียงชุดใหญ่', '#ea580c', 'พร้อมใช้งาน'],
+      ['RM-005', 'ห้องประชุมชั้น 5 (ห้อง VIP3)', '8-12 คน', 'ชั้น 5', 'สมาร์ททีวี VIP, โซฟาหลุยส์', '#db2777', 'พร้อมใช้งาน']
+    ];
+    initialRooms.forEach(row => roomsSheet.appendRow(row));
+  }
+
+  // 3. Settings Sheet
+  let settingsSheet = ss.getSheetByName('Settings');
+  if (!settingsSheet) settingsSheet = ss.insertSheet('Settings');
+  if (settingsSheet.getLastRow() === 0) {
+    settingsSheet.appendRow(['Key', 'Value']);
+    settingsSheet.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#0284c7').setFontColor('#ffffff');
+    
+    const initialSettings = [
+      ['ADMIN_PASSCODE', '1234'],
+      ['LINE_CHANNEL_ACCESS_TOKEN', 'QjKWfdUSHzuZ9Boq/nYUAHxMYArE15ymnYwkzV3RuX6smXV2OZmP1x9RU3sjRR3/sD1/4o7Zhe1YM9Vah1K5FbSp5xVpvjUXCI7vPppicGjbtlbgp2pd8jBjLdUseY3y2hIqTQsXc1KqIhHM+18K+gdB04t89/1O/w1cDnyilFU='],
+      ['LINE_ADMIN_USER_ID', '']
+    ];
+    initialSettings.forEach(row => settingsSheet.appendRow(row));
+  }
+
+  return { success: true, message: 'อัปเดตและเริ่มต้นฐานข้อมูลเรียบร้อยแล้ว' };
+}
+
+function getSettingsDict() {
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName('Settings');
+  if (!sheet) {
+    initDatabase();
+    sheet = ss.getSheetByName('Settings');
+  }
+  
+  const dict = { 'ADMIN_PASSCODE': '1234', 'LINE_CHANNEL_ACCESS_TOKEN': '', 'LINE_ADMIN_USER_ID': '' };
+  if (!sheet) return dict;
+
+  const targetToken = 'QjKWfdUSHzuZ9Boq/nYUAHxMYArE15ymnYwkzV3RuX6smXV2OZmP1x9RU3sjRR3/sD1/4o7Zhe1YM9Vah1K5FbSp5xVpvjUXCI7vPppicGjbtlbgp2pd8jBjLdUseY3y2hIqTQsXc1KqIhHM+18K+gdB04t89/1O/w1cDnyilFU=';
+  const targetAdminId = 'C365dfc5013c8e61b7988f714ac0c128f';
+
+  let hasTokenRow = false;
+  let tokenRowIndex = -1;
+  let hasAdminIdRow = false;
+  let adminIdRowIndex = -1;
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const key = String(data[i][0] || '').trim();
+    const val = String(data[i][1] !== undefined ? data[i][1] : '').trim();
+    if (key) {
+      dict[key] = val;
+    }
+    if (key === 'LINE_CHANNEL_ACCESS_TOKEN') {
+      hasTokenRow = true;
+      tokenRowIndex = i + 1;
+    }
+    if (key === 'LINE_ADMIN_USER_ID') {
+      hasAdminIdRow = true;
+      adminIdRowIndex = i + 1;
+    }
+  }
+
+  // เขียนรหัส Token ลงแผ่นงานอัตโนมัติหากยังไม่มีหรือข้อมูลไม่ตรง
+  if (dict['LINE_CHANNEL_ACCESS_TOKEN'] !== targetToken) {
+    if (hasTokenRow && tokenRowIndex !== -1) {
+      sheet.getRange(tokenRowIndex, 2).setValue(targetToken);
+    } else {
+      sheet.appendRow(['LINE_CHANNEL_ACCESS_TOKEN', targetToken]);
+    }
+    dict['LINE_CHANNEL_ACCESS_TOKEN'] = targetToken;
+  }
+
+  // เขียนรหัส LINE_ADMIN_USER_ID ลงแผ่นงานอัตโนมัติหากยังไม่มีหรือข้อมูลไม่ตรง
+  if (dict['LINE_ADMIN_USER_ID'] !== targetAdminId) {
+    if (hasAdminIdRow && adminIdRowIndex !== -1) {
+      sheet.getRange(adminIdRowIndex, 2).setValue(targetAdminId);
+    } else {
+      sheet.appendRow(['LINE_ADMIN_USER_ID', targetAdminId]);
+    }
+    dict['LINE_ADMIN_USER_ID'] = targetAdminId;
+  }
+
+  return dict;
+}
+
+function getPublicData(targetDateStr) {
+  try {
+    const ss = getSpreadsheet();
+    if (!ss.getSheetByName('Bookings') || !ss.getSheetByName('Rooms')) initDatabase();
+
+    const roomsSheet = ss.getSheetByName('Rooms');
+    const roomsData = roomsSheet ? roomsSheet.getDataRange().getValues() : [];
+    const rooms = [];
+    for (let i = 1; i < roomsData.length; i++) {
+      const row = roomsData[i];
+      if (row[0] && String(row[6]).trim() !== 'ปิดปรับปรุง') {
+        rooms.push({
+          id: String(row[0] || ''),
+          name: String(row[1] || ''),
+          capacity: String(row[2] || ''),
+          location: String(row[3] || ''),
+          facilities: String(row[4] || ''),
+          color: String(row[5] || '#0284c7'),
+          status: String(row[6] || 'พร้อมใช้งาน')
+        });
+      }
+    }
+
+    const dateToSearch = targetDateStr || formatDate(new Date());
+    const bookingsSheet = ss.getSheetByName('Bookings');
+    const bookingsData = bookingsSheet ? bookingsSheet.getDataRange().getValues() : [];
+    const bookings = [];
+
+    for (let i = 1; i < bookingsData.length; i++) {
+      const row = bookingsData[i];
+      if (!row[0]) continue;
+      
+      const bDate = formatDate(row[3]);
+      const status = String(row[14] || 'จองเรียบร้อย').trim();
+      
+      if (bDate === dateToSearch && status !== 'ปฏิเสธ' && status !== 'ยกเลิก') {
+        bookings.push({
+          id: String(row[0] || ''),
+          timestamp: String(row[1] || ''),
+          roomName: String(row[2] || ''),
+          bookingDate: bDate,
+          startTime: formatTime(row[4]),
+          endTime: formatTime(row[5]),
+          bookedBy: String(row[6] || ''),
+          department: String(row[7] || ''),
+          phone: String(row[8] || '-'),
+          purpose: String(row[9] || ''),
+          meetingType: String(row[10] || 'ภายใน'),
+          attendees: String(row[11] || '1'),
+          equipment: String(row[12] || '-'),
+          seatingLayout: String(row[13] || 'นักเรียน'),
+          status: status
+        });
+      }
+    }
+
+    return { success: true, selectedDate: dateToSearch, rooms: rooms, bookings: bookings };
+  } catch (err) {
+    return { success: false, error: err.toString() };
+  }
+}
+
+function getOverviewData(periodType, year, month) {
+  try {
+    const ss = getSpreadsheet();
+    const sheet = ss.getSheetByName('Bookings');
+    if (!sheet) initDatabase();
+
+    const data = sheet ? sheet.getDataRange().getValues() : [];
+    const bookings = [];
+
+    const targetYear = parseInt(year, 10) || new Date().getFullYear();
+    const targetMonth = (parseInt(month, 10) !== undefined && !isNaN(parseInt(month, 10))) ? parseInt(month, 10) : new Date().getMonth();
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (!row[0]) continue;
+
+      const dateStr = formatDate(row[3]);
+      if (!dateStr || dateStr.indexOf('-') === -1) continue;
+
+      const parts = dateStr.split('-');
+      const bYear = parseInt(parts[0], 10);
+      const bMonth = parseInt(parts[1], 10) - 1; // 0-indexed month
+      const status = String(row[14] || 'จองเรียบร้อย').trim();
+
+      if (status === 'ยกเลิก') continue;
+
+      if (periodType === 'month') {
+        if (bYear === targetYear && bMonth === targetMonth) {
+          bookings.push(formatBookingRow(row));
+        }
+      } else {
+        bookings.push(formatBookingRow(row));
+      }
+    }
+
+    return { success: true, bookings: bookings };
+  } catch (err) {
+    return { success: false, error: err.toString() };
+  }
+}
+
+function formatBookingRow(row) {
+  return {
+    id: String(row[0] || ''),
+    timestamp: String(row[1] || ''),
+    roomName: String(row[2] || ''),
+    bookingDate: formatDate(row[3]),
+    startTime: formatTime(row[4]),
+    endTime: formatTime(row[5]),
+    bookedBy: String(row[6] || ''),
+    department: String(row[7] || ''),
+    phone: String(row[8] || '-'),
+    purpose: String(row[9] || ''),
+    meetingType: String(row[10] || 'ภายใน'),
+    attendees: String(row[11] || '1'),
+    equipment: String(row[12] || '-'),
+    seatingLayout: String(row[13] || 'นักเรียน'),
+    status: String(row[14] || 'จองเรียบร้อย').trim()
+  };
+}
+
+/**
+ * บันทึกคำขอจองห้องประชุมตามฟิลด์จริง
+ */
+function submitBooking(data) {
   const lock = LockService.getScriptLock();
   try {
-    // Acquire lock for up to 20 seconds to prevent race conditions
     lock.waitLock(20000);
-  } catch (err) {
-    return createJsonResponse({
-      success: false,
-      error: "Server is busy. Please try again in a few seconds."
-    });
+  } catch (e) {
+    return { success: false, message: 'ระบบกำลังประมวลผลคำขออื่น กรุณาลองใหม่อีกครั้ง' };
   }
 
   try {
-    let payload = {};
-    if (e && e.postData && e.postData.contents) {
-      payload = JSON.parse(e.postData.contents);
+    const ss = getSpreadsheet();
+    let bookingsSheet = ss.getSheetByName('Bookings');
+    if (!bookingsSheet) {
+      initDatabase();
+      bookingsSheet = ss.getSheetByName('Bookings');
+    } else {
+      ensureCorrectHeaders();
     }
 
-    const action = payload.action || 'create_booking';
+    const roomName = String(data.roomName || '').trim();
+    // ตรวจสอบและดึงค่า bookedBy และ purpose ให้ถูกต้อง
+    const bookedBy = String(data.bookedBy || data.purpose || '').trim();
+    const department = String(data.department || '').trim();
+    const phone = String(data.phone || '-').trim();
+    const purpose = String(data.purpose || data.bookedBy || '').trim();
+    const meetingType = String(data.meetingType || 'ภายใน').trim();
+    const attendees = String(data.attendees || '1').trim();
+    const equipment = Array.isArray(data.equipment) ? data.equipment.join(', ') : String(data.equipment || '-').trim();
+    const seatingLayout = String(data.seatingLayout || 'นักเรียน').trim();
 
-    if (action === 'create_booking') {
-      const result = recordBookingToSheet(payload.data || payload);
-      return createJsonResponse({
-        success: true,
-        bookingNo: result.bookingNo,
-        message: "บันทึกข้อมูลการจองห้องประชุมสำเร็จ"
+    if (!roomName || !bookedBy || !department || !purpose) {
+      return { success: false, message: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (*)' };
+    }
+
+    // Build items array
+    let items = [];
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      items = data.items.map(it => ({
+        bookingDate: formatDate(it.bookingDate),
+        startTime: formatTime(it.startTime),
+        endTime: formatTime(it.endTime)
+      }));
+    } else {
+      items.push({
+        bookingDate: formatDate(data.bookingDate),
+        startTime: formatTime(data.startTime),
+        endTime: formatTime(data.endTime)
       });
     }
 
-    if (action === 'cancel_booking') {
-      const result = cancelBookingInSheet(payload.bookingNo, payload.reason);
-      return createJsonResponse({
-        success: true,
-        message: "ยกเลิกการจองห้องประชุมสำเร็จ",
-        bookingNo: payload.bookingNo
+    // Validate times & check conflicts for each requested day
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.bookingDate || !item.startTime || !item.endTime) {
+        return { success: false, message: `กรุณาระบุวันและเวลาในรายการที่ ${i + 1} ให้ครบถ้วน` };
+      }
+      const startMin = timeToMinutes(item.startTime);
+      const endMin = timeToMinutes(item.endTime);
+      if (startMin >= endMin) {
+        return { success: false, message: `รายการวันที่ ${item.bookingDate}: เวลาสิ้นสุดต้องมาหลังเวลาเริ่มต้น` };
+      }
+
+      const isConflict = checkTimeConflict(roomName, item.bookingDate, item.startTime, item.endTime);
+      if (isConflict) {
+        return {
+          success: false,
+          message: `ไม่สามารถจองได้: ห้อง ${roomName} มีการจองช่วงเวลา ${item.startTime} - ${item.endTime} น. ในวันที่ ${item.bookingDate} แล้ว`
+        };
+      }
+    }
+
+    // Save rows
+    const now = new Date();
+    const timestamp = Utilities.formatDate(now, 'Asia/Bangkok', 'yyyy-MM-dd HH:mm:ss');
+    const initialStatus = 'จองเรียบร้อย';
+    const groupBookingId = 'BK-' + Utilities.formatDate(now, 'Asia/Bangkok', 'yyyyMMdd') + '-' + Math.floor(1000 + Math.random() * 9000);
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const bookingId = items.length > 1 ? `${groupBookingId}-${i + 1}` : groupBookingId;
+
+      const newRow = [
+        bookingId,
+        timestamp,
+        roomName,
+        item.bookingDate,
+        item.startTime,
+        item.endTime,
+        bookedBy,
+        department,
+        phone,
+        purpose,
+        meetingType,
+        attendees,
+        equipment,
+        seatingLayout,
+        initialStatus
+      ];
+
+      bookingsSheet.appendRow(newRow);
+
+      // Sync ไปยัง Supabase (Background Mirroring)
+      syncToSupabase({
+        booking_no: bookingId,
+        room_name: roomName,
+        booking_date: item.bookingDate,
+        start_time: item.startTime,
+        end_time: item.endTime,
+        emp_id: data.emp_id || '000000',
+        requester_name: bookedBy,
+        department: department,
+        topic: purpose,
+        meeting_type: meetingType,
+        attendees_count: parseInt(attendees, 10) || 1,
+        equipment: Array.isArray(data.equipment) ? data.equipment : [equipment],
+        room_layout: seatingLayout,
+        status: 'confirmed'
       });
     }
 
-    return createJsonResponse({
-      success: false,
-      error: "Invalid action specified: " + action
-    });
+    // ส่งข้อความแจ้งเตือนผู้ดูแลผ่าน LINE
+    const payloadForLine = {
+      roomName: roomName,
+      bookedBy: bookedBy,
+      department: department,
+      phone: phone,
+      purpose: purpose,
+      meetingType: meetingType,
+      attendees: attendees,
+      equipment: equipment,
+      seatingLayout: seatingLayout
+    };
+    sendBookingNotificationToLine(payloadForLine, items);
 
+    const dayText = items.length > 1 ? `จำนวน ${items.length} วัน` : '';
+    return {
+      success: true,
+      message: `บันทึกแบบฟอร์มการจอง ${dayText} เรียบร้อยแล้ว (สถานะ: จองเรียบร้อย)`,
+      bookingId: groupBookingId
+    };
   } catch (err) {
-    Logger.log("doPost Error: " + err.toString());
-    return createJsonResponse({
-      success: false,
-      error: err.toString()
-    });
+    return { success: false, message: 'เกิดข้อผิดพลาด: ' + err.toString() };
   } finally {
     lock.releaseLock();
   }
 }
 
 /**
- * Record a booking row into Google Sheet
+ * Sync row to Supabase REST API
  */
-function recordBookingToSheet(booking) {
-  const ss = getOrCreateSpreadsheet();
-  const sheet = getOrCreateSheet(ss, CONFIG.SHEET_BOOKINGS, getBookingHeaders());
-
-  const timestamp = Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyy-MM-dd HH:mm:ss");
-  const bookingNo = booking.booking_no || generateBookingNo();
-  
-  // Format 6-digit Employee ID
-  let empId = booking.emp_id ? String(booking.emp_id).trim().padStart(6, '0') : '';
-
-  // Equipments as comma-separated text
-  let equipmentStr = '';
-  if (Array.isArray(booking.equipment)) {
-    equipmentStr = booking.equipment.join(', ');
-  } else if (booking.equipment) {
-    equipmentStr = String(booking.equipment);
+function syncToSupabase(payload) {
+  try {
+    const url = SUPABASE_URL + '/rest/v1/room_bookings';
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Prefer': 'return=minimal'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch(url, options);
+  } catch (e) {
+    Logger.log('Supabase sync warning: ' + e.toString());
   }
-
-  const row = [
-    timestamp,
-    bookingNo,
-    booking.room_name || '',
-    booking.booking_date || '',
-    booking.start_time || '',
-    booking.end_time || '',
-    "'" + empId, // Plain text representation with leading zero preserved
-    booking.requester_name || '',
-    booking.department || '',
-    booking.topic || '',
-    booking.meeting_type || 'ภายใน',
-    booking.attendees_count || 1,
-    equipmentStr,
-    booking.equipment_other || '',
-    booking.room_layout || 'Classroom',
-    booking.room_layout_other || '',
-    booking.status || 'confirmed',
-    booking.notes || ''
-  ];
-
-  sheet.appendRow(row);
-
-  // Format Emp ID column as Plain Text
-  const lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow, 7).setNumberFormat("@");
-
-  return { bookingNo: bookingNo };
 }
 
-/**
- * Cancel a booking row in Google Sheet
- */
-function cancelBookingInSheet(bookingNo, reason) {
-  const ss = getOrCreateSpreadsheet();
-  const sheet = ss.getSheetByName(CONFIG.SHEET_BOOKINGS);
+function checkTimeConflict(roomName, bookingDateStr, newStartStr, newEndStr, excludeId) {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Bookings');
   if (!sheet) return false;
 
   const data = sheet.getDataRange().getValues();
+  const newStart = timeToMinutes(newStartStr);
+  const newEnd = timeToMinutes(newEndStr);
+
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]).trim() === String(bookingNo).trim()) {
-      sheet.getRange(i + 1, 17).setValue('cancelled'); // Status column
-      sheet.getRange(i + 1, 18).setValue((data[i][17] || '') + ' [ยกเลิก: ' + (reason || 'ผู้ใช้ยกเลิก') + ']');
-      return true;
+    const row = data[i];
+    const bId = row[0];
+    if (!bId || (excludeId && String(bId).trim() === String(excludeId).trim())) continue;
+
+    const rName = String(row[2]).trim();
+    const bDate = formatDate(row[3]);
+    const status = String(row[14] || 'จองเรียบร้อย').trim();
+
+    if (rName === roomName && bDate === bookingDateStr && status !== 'ปฏิเสธ' && status !== 'ยกเลิก') {
+      const existStart = timeToMinutes(formatTime(row[4]));
+      const existEnd = timeToMinutes(formatTime(row[5]));
+
+      if (newStart < existEnd && newEnd > existStart) {
+        return true;
+      }
     }
   }
+
   return false;
 }
 
-/**
- * Read bookings list from Google Sheet
- */
-function getBookingsFromSheet() {
-  const ss = getOrCreateSpreadsheet();
-  const sheet = ss.getSheetByName(CONFIG.SHEET_BOOKINGS);
-  if (!sheet) return [];
-
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return [];
-
-  const list = [];
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    list.push({
-      timestamp: row[0],
-      booking_no: row[1],
-      room_name: row[2],
-      booking_date: row[3],
-      start_time: row[4],
-      end_time: row[5],
-      emp_id: String(row[6]).replace(/^'/, '').padStart(6, '0'),
-      requester_name: row[7],
-      department: row[8],
-      topic: row[9],
-      meeting_type: row[10],
-      attendees_count: row[11],
-      equipment: row[12],
-      equipment_other: row[13],
-      room_layout: row[14],
-      room_layout_other: row[15],
-      status: row[16],
-      notes: row[17]
-    });
+function getAdminDashboardData(passcode) {
+  const settings = getSettingsDict();
+  const inputPass = String(passcode || '').trim();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (inputPass !== '1234' && inputPass !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
   }
-  return list;
-}
 
-/**
- * Get or create Spreadsheet
- */
-function getOrCreateSpreadsheet() {
-  const props = PropertiesService.getScriptProperties();
-  let ssId = props.getProperty('SPREADSHEET_ID');
-
-  if (ssId) {
-    try {
-      return SpreadsheetApp.openById(ssId);
-    } catch (e) {
-      Logger.log("Stored spreadsheet ID not found or inaccessible: " + ssId);
+  const ss = getSpreadsheet();
+  const bookingsSheet = ss.getSheetByName('Bookings');
+  const bookingsData = bookingsSheet ? bookingsSheet.getDataRange().getValues() : [];
+  const bookings = [];
+  for (let i = 1; i < bookingsData.length; i++) {
+    const row = bookingsData[i];
+    if (row[0]) {
+      bookings.push(formatBookingRow(row));
     }
   }
 
-  // Check if spreadsheet already exists in Drive with this name
-  const files = DriveApp.getFilesByName(CONFIG.SPREADSHEET_NAME);
-  if (files.hasNext()) {
-    const file = files.next();
-    props.setProperty('SPREADSHEET_ID', file.getId());
-    return SpreadsheetApp.openById(file.getId());
+  const roomsSheet = ss.getSheetByName('Rooms');
+  const roomsData = roomsSheet ? roomsSheet.getDataRange().getValues() : [];
+  const rooms = [];
+  for (let i = 1; i < roomsData.length; i++) {
+    const row = roomsData[i];
+    if (row[0]) {
+      rooms.push({
+        id: String(row[0] || ''),
+        name: String(row[1] || ''),
+        capacity: String(row[2] || ''),
+        location: String(row[3] || ''),
+        facilities: String(row[4] || ''),
+        color: String(row[5] || ''),
+        status: String(row[6] || '')
+      });
+    }
   }
 
-  // Create new Spreadsheet
-  const newSs = SpreadsheetApp.create(CONFIG.SPREADSHEET_NAME);
-  props.setProperty('SPREADSHEET_ID', newSs.getId());
-
-  // Setup initial booking sheet
-  getOrCreateSheet(newSs, CONFIG.SHEET_BOOKINGS, getBookingHeaders());
-  setupRoomsSheet(newSs);
-
-  return newSs;
+  return {
+    success: true,
+    bookings: bookings.reverse(),
+    rooms: rooms,
+    settings: {
+      LINE_CHANNEL_ACCESS_TOKEN: settings.LINE_CHANNEL_ACCESS_TOKEN ? '••••••••' : '',
+      LINE_ADMIN_USER_ID: settings.LINE_ADMIN_USER_ID || ''
+    }
+  };
 }
 
-/**
- * Get or create a sheet with headers
- */
-function getOrCreateSheet(ss, sheetName, headers) {
-  let sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
+function formatDate(d) {
+  if (!d) return '';
+  if (d instanceof Date) {
+    if (isNaN(d.getTime())) return '';
+    return Utilities.formatDate(d, 'Asia/Bangkok', 'yyyy-MM-dd');
   }
+  let str = String(d).trim();
+  if (str.indexOf('T') > -1) str = str.split('T')[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
 
-  if (sheet.getLastRow() === 0 && headers && headers.length > 0) {
-    sheet.appendRow(headers);
-    const headerRange = sheet.getRange(1, 1, 1, headers.length);
-    headerRange.setBackground("#1e3a8a");
-    headerRange.setFontColor("#ffffff");
-    headerRange.setFontWeight("bold");
-    sheet.setFrozenRows(1);
-    
-    // Set Plain Text for Emp ID column (column 7)
-    sheet.getRange(1, 7, 500, 1).setNumberFormat("@");
+  const dateObj = new Date(str);
+  if (isNaN(dateObj.getTime())) return str;
+  return Utilities.formatDate(dateObj, 'Asia/Bangkok', 'yyyy-MM-dd');
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  if (t instanceof Date) return Utilities.formatDate(t, 'Asia/Bangkok', 'HH:mm');
+  let str = String(t).trim();
+  if (/^\d{1,2}:\d{2}$/.test(str)) {
+    const parts = str.split(':');
+    return parts[0].padStart(2, '0') + ':' + parts[1];
   }
+  if (str.indexOf('T') > -1) {
+    const timePart = str.split('T')[1];
+    if (timePart) return timePart.substring(0, 5);
+  }
+  return str;
+}
 
-  return sheet;
+function timeToMinutes(tStr) {
+  if (!tStr) return 0;
+  const parts = String(tStr).split(':');
+  return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
 }
 
 /**
- * Seed Rooms sheet with master data
+ * ส่งการแจ้งเตือนไปยังผู้ดูแลระบบผ่าน LINE Bot Messaging API
  */
-function setupRoomsSheet(ss) {
-  const sheet = getOrCreateSheet(ss, CONFIG.SHEET_ROOMS, [
-    "รหัสห้อง (Room ID)", "ชื่อห้องประชุม", "ชั้น", "ความจุ (ที่นั่ง)", "สีประจำห้อง", "อุปกรณ์ประจำห้อง", "สถานะ"
-  ]);
+function sendBookingNotificationToLine(payload, items) {
+  try {
+    const settings = getSettingsDict();
+    const channelToken = settings.LINE_CHANNEL_ACCESS_TOKEN;
+    const adminUserId = settings.LINE_ADMIN_USER_ID;
 
-  if (sheet.getLastRow() <= 1) {
-    const rooms = [
-      ["room_fl5_large", "ห้องประชุมชั้น 5 (ห้องใหญ่)", "ชั้น 5", 100, "#1e3a8a", "โปรเจคเตอร์ 2 ตัว, ไมค์ลอย 4 ตัว, ระบบเสียง, เวที", "พร้อมใช้งาน"],
-      ["room_fl5_nan", "ห้องประชุมชั้น 5 (ห้องน่าน)", "ชั้น 5", 30, "#0d9488", "สมาร์ททีวี, ไมค์ตั้งโต๊ะ, ไวท์บอร์ด", "พร้อมใช้งาน"],
-      ["room_fl5_glass", "ห้องประชุมชั้น 5 (ห้องกระจก)", "ชั้น 5", 20, "#0284c7", "สมาร์ททีวี, พอร์ต HDMI/Type-C", "พร้อมใช้งาน"],
-      ["room_fl6", "ห้องประชุมชั้น 6", "ชั้น 6", 50, "#7c3aed", "โปรเจคเตอร์, ระบบเสียงสเตอริโอ, เก้าอี้เลคเชอร์", "พร้อมใช้งาน"],
-      ["room_fl5_vip5", "ห้องประชุมชั้น 5 (ห้อง VIP5)", "ชั้น 5", 15, "#ea580c", "จอ 4K, ระบบ Video Conference, ไมค์รอบทิศทาง", "พร้อมใช้งาน"]
-    ];
-    sheet.getRange(2, 1, rooms.length, rooms[0].length).setValues(rooms);
+    if (!channelToken || !adminUserId) {
+      Logger.log('No LINE credentials set in Settings sheet.');
+      return;
+    }
+
+    // สร้างข้อความแจ้งเตือนภาษาไทย
+    let msg = `\n🔔 มีการจองห้องประชุมใหม่! (จองเรียบร้อย)\n`;
+    msg += `------------------------\n`;
+    msg += `ห้องประชุม: ${payload.roomName.replace('ห้องประชุมชั้น ', 'ชั้น ').replace('ห้องประชุม ', 'ชั้น ')}\n`;
+    msg += `ผู้ขอจอง: ${payload.bookedBy} (${payload.department})\n`;
+    msg += `เบอร์โทร: ${payload.phone || '-'}\n`;
+    msg += `วัตถุประสงค์: ${payload.purpose}\n`;
+    msg += `ผู้เข้าร่วม: ${payload.attendees} คน\n`;
+    msg += `ผังจัดห้อง: ${payload.seatingLayout || 'นักเรียน'}\n`;
+    msg += `อุปกรณ์: ${payload.equipment || '-'}\n`;
+    msg += `ประเภท: ${payload.meetingType || 'ภายใน'}\n`;
+    msg += `------------------------\n\n`;
+
+    msg += `🗓️ รายการวันและเวลาใช้งาน:\n`;
+    items.forEach((item, index) => {
+      msg += `${index + 1}. วันที่ ${item.bookingDate} เวลา ${item.startTime} - ${item.endTime} น.\n`;
+    });
+
+    // ส่งผ่าน LINE Messaging API
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'Authorization': 'Bearer ' + channelToken
+      },
+      payload: JSON.stringify({
+        to: adminUserId,
+        messages: [
+          {
+            type: 'text',
+            text: msg
+          }
+        ]
+      }),
+      muteHttpExceptions: true
+    };
+    const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', options);
+    Logger.log('LINE Bot Push response: ' + response.getContentText());
+  } catch (err) {
+    Logger.log('Failed to send LINE notification: ' + err.toString());
   }
 }
 
 /**
- * Booking Sheet Headers
+ * ส่งข้อความตอบกลับ LINE (Reply Message)
  */
-function getBookingHeaders() {
-  return [
-    "วันเวลาที่บันทึก",
-    "รหัสการจอง",
-    "ห้องประชุม",
-    "วันที่ใช้งาน",
-    "เวลาเริ่มต้น",
-    "เวลาสิ้นสุด",
-    "รหัสพนักงาน",
-    "ชื่อผู้ขอใช้ห้อง",
-    "หน่วยงาน",
-    "หัวข้อการประชุม",
-    "ประเภทการประชุม",
-    "จำนวนผู้เข้าร่วม",
-    "อุปกรณ์ที่ขอใช้",
-    "อุปกรณ์อื่นเพิ่มเติม",
-    "รูปแบบการจัดห้อง",
-    "รูปแบบอื่นเพิ่มเติม",
-    "สถานะ",
-    "หมายเหตุ"
-  ];
-}
-
-/**
- * Generate Booking Number
- */
-function generateBookingNo() {
-  const dateStr = Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyyMMdd");
-  const rand = Math.floor(100 + Math.random() * 900);
-  return "MR-" + dateStr + "-" + rand;
-}
-
-/**
- * Return JSON Response
- */
-function createJsonResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+function replyLineMessage(channelToken, replyToken, text) {
+  try {
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'Authorization': 'Bearer ' + channelToken
+      },
+      payload: JSON.stringify({
+        replyToken: replyToken,
+        messages: [{ type: 'text', text: text }]
+      }),
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch('https://api.line.me/v2/bot/message/reply', options);
+  } catch (err) {
+    Logger.log('Failed to reply LINE message: ' + err.toString());
+  }
 }
