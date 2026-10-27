@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจองห้องประชุม - โรงพยาบาลพิษณุเวช พิจิตร</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 40%, #ffffff 0%, #f1f5f9 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      font-family: 'Prompt', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="text-center p-6 max-w-sm w-full">
+    <div class="inline-flex justify-center mb-6">
+      <img src="logo.png" alt="PPCH Logo" class="h-20 w-auto object-contain drop-shadow-md">
+    </div>
+    
+    <div class="flex justify-center mb-6">
+      <div class="medical-cross-loader"></div>
+    </div>
+    
+    <h1 class="text-xl font-bold text-slate-800 mb-1">ระบบจองห้องประชุม</h1>
+    <p class="text-xs text-slate-500 mb-6">โรงพยาบาลพิษณุเวช พิจิตร (PPCH)</p>
+    
+    <div class="inline-flex items-center gap-2 text-xs text-sky-700 bg-sky-50 px-3 py-1.5 rounded-full border border-sky-200">
+      <span class="inline-block w-2 h-2 rounded-full bg-sky-500 animate-ping"></span>
+      กำลังเชื่อมต่อและเลือกมุมมองที่เหมาะสม...
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Smart Auto-detect Router
+      const params = new URLSearchParams(window.location.search);
+      const forcedView = params.get('view');
+      
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isSmallScreen = window.innerWidth < 768;
+
+      let targetUrl = 'desktop.html';
+
+      if (forcedView === 'mobile') {
+        targetUrl = 'mobile.html';
+      } else if (forcedView === 'desktop') {
+        targetUrl = 'desktop.html';
+      } else if (isMobileDevice || isSmallScreen) {
+        targetUrl = 'mobile.html';
+      }
+
+      // Smooth instant redirect
+      setTimeout(function() {
+        window.location.replace(targetUrl + window.location.search);
+      }, 350);
+    })();
+  </script>
+</body>
+</html>

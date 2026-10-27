@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>จองห้องประชุม PPCH - มุมมองมือถือ</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Material Symbols & Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="css/style.css">
+  
+  <style>
+    /* Bottom Sheet Animation */
+    .bottom-sheet {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bottom-sheet.closed {
+      transform: translateY(100%);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-24">
+
+  <!-- Fullscreen Preloader -->
+  <div id="preloader" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-300">
+    <img src="logo.png" alt="PPCH Logo" class="h-14 w-auto mb-5 object-contain">
+    <div class="medical-cross-loader mb-3"></div>
+    <p class="font-heading text-xs font-semibold text-slate-700">กำลังเปิดระบบจองห้องประชุม...</p>
+  </div>
+
+  <!-- Action Loader Overlay -->
+  <div id="action-loader" class="fixed inset-0 z-50 action-loader-overlay hidden flex flex-col items-center justify-center text-white p-6 text-center">
+    <div class="medical-cross-loader mb-4"></div>
+    <p id="action-loader-text" class="font-heading text-sm font-semibold">กำลังบันทึกข้อมูล...</p>
+  </div>
+
+  <!-- MOBILE TOPBAR -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 shadow-xs flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <img src="logo.png" alt="Logo" class="h-9 w-auto object-contain">
+      <div>
+        <h1 class="font-heading text-xs font-bold text-slate-900 leading-tight">ระบบจองห้องประชุม</h1>
+        <p class="text-[10px] text-slate-500">รพ.พิษณุเวช พิจิตร</p>
+      </div>
+    </div>
+
+    <!-- Switch to Desktop View Link -->
+    <a href="desktop.html" class="flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 active:scale-95 transition">
+      <span class="material-symbols-outlined text-[14px]">desktop_windows</span>
+      <span>จอคอม</span>
+    </a>
+  </header>
+
+  <!-- DATE SELECTION BAR & ROOM PILLS -->
+  <div class="bg-white border-b border-slate-200 p-3 space-y-2.5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+        <span class="material-symbols-outlined text-blue-700 text-[18px]">calendar_today</span>
+        <span>เลือกวันที่:</span>
+      </div>
+      <input type="date" id="m-date-picker" class="text-xs font-semibold bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-600">
+    </div>
+
+    <!-- Room Filter Chips (Horizontal Scroll) -->
+    <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar text-xs" id="m-room-pills">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+
+  <!-- ROOMS STATUS CARDS CONTAINER -->
+  <div class="p-4 space-y-3.5" id="m-rooms-container">
+    <!-- Populated dynamically via JS -->
+  </div>
+
+  <!-- STICKY BOTTOM ACTION BAR -->
+  <div class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 z-30 shadow-lg flex items-center gap-3">
+    <button onclick="openBookingBottomSheet()" class="flex-1 h-12 rounded-2xl bg-blue-700 active:bg-blue-800 text-white font-heading text-sm font-bold shadow-md flex items-center justify-center gap-2 transition">
+      <span class="material-symbols-outlined text-[20px]">add_circle</span>
+      <span>จองห้องประชุม</span>
+    </button>
+  </div>
+
+  <!-- BOTTOM SHEET: BOOKING FORM MODAL -->
+  <div id="booking-sheet-backdrop" onclick="closeBookingBottomSheet()" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs hidden transition-opacity"></div>
+  
+  <div id="booking-bottom-sheet" class="bottom-sheet closed fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <!-- Sheet Drag Handle & Header -->
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50">
+      <div class="flex items-center gap-2">
+        <span class="w-8 h-8 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
+          <span class="material-symbols-outlined text-[20px]">edit_calendar</span>
+        </span>
+        <div>
+          <h3 class="font-heading text-sm font-bold text-slate-900">ฟอร์มจองห้องประชุม</h3>
+          <p class="text-[10px] text-slate-500">กรอกข้อมูลเพื่อยืนยันห้องทันที</p>
+        </div>
+      </div>
+      <button onclick="closeBookingBottomSheet()" class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+
+    <!-- Sheet Scrollable Form Content -->
+    <form id="m-booking-form" onsubmit="handleMobileSubmit(event)" class="overflow-y-auto p-5 space-y-5 text-xs">
+      
+      <!-- 1. Room Selection -->
+      <div>
+        <label class="font-bold text-slate-800 block mb-1.5">1. เลือกห้องประชุม <span class="text-red-500">*</span></label>
+        <select id="m-select-room" required onchange="triggerMobileConflictCheck()"
+          class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none bg-white font-semibold">
+          <!-- Populated via JS -->
+        </select>
+      </div>
+
+      <!-- 2. Date & Time -->
+      <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
+        <label class="font-bold text-slate-800 block">2. วันและเวลา <span class="text-red-500">*</span></label>
+        
+        <div>
+          <label class="text-[11px] text-slate-500 block mb-1">วันที่ใช้งาน</label>
+          <input type="date" id="m-input-date" required onchange="triggerMobileConflictCheck()"
+            class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none bg-white">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] text-slate-500 block mb-1">เวลาเริ่ม</label>
+            <select id="m-select-start" required onchange="triggerMobileConflictCheck()" class="w-full px-2.5 py-2 rounded-xl border border-slate-300 text-xs bg-white"></select>
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 block mb-1">เวลาสิ้นสุด</label>
+            <select id="m-select-end" required onchange="triggerMobileConflictCheck()" class="w-full px-2.5 py-2 rounded-xl border border-slate-300 text-xs bg-white"></select>
+          </div>
+        </div>
+
+        <div id="m-conflict-badge" class="hidden p-2.5 rounded-xl text-[11px] font-medium flex items-center gap-1.5"></div>
+      </div>
+
+      <!-- 3. Requester Search Autocomplete -->
+      <div class="relative">
+        <label class="font-bold text-slate-800 block mb-1.5">3. ผู้ขอใช้ห้อง (ค้นหาชื่อ/รหัส) <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[16px]">search</span>
+          <input type="text" id="m-search-emp" placeholder="พิมพ์ชื่อ นามสกุล หรือรหัส 6 หลัก..." autocomplete="off"
+            class="w-full pl-8 pr-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none bg-white">
+        </div>
+        <div id="m-emp-list" class="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden"></div>
+        <input type="hidden" id="m-emp-id">
+        <input type="hidden" id="m-requester-name" required>
+      </div>
+
+      <div>
+        <label class="text-[11px] text-slate-500 block mb-1">หน่วยงาน / แผนก</label>
+        <input type="text" id="m-dept" required placeholder="เช่น ทรัพยากรบุคคล (HR)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-slate-50">
+      </div>
+
+      <!-- 4. Topic & Type -->
+      <div>
+        <label class="font-bold text-slate-800 block mb-1.5">4. หัวข้อการประชุม <span class="text-red-500">*</span></label>
+        <input type="text" id="m-topic" required placeholder="ระบุหัวข้อหรือวาระการประชุม" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs bg-white">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer bg-white text-xs">
+          <input type="radio" name="m_type" value="ภายใน" checked>
+          <span>การประชุมภายใน</span>
+        </label>
+        <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 cursor-pointer bg-white text-xs">
+          <input type="radio" name="m_type" value="ภายนอก">
+          <span>การประชุมภายนอก</span>
+        </label>
+      </div>
+
+      <!-- 5. Attendees -->
+      <div>
+        <label class="font-bold text-slate-800 block mb-1.5">5. จำนวนผู้เข้าร่วมประชุม (คน) <span class="text-red-500">*</span></label>
+        <input type="number" id="m-attendees" min="1" max="200" value="10" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs text-center font-bold bg-white">
+      </div>
+
+      <!-- 6. Equipment -->
+      <div>
+        <label class="font-bold text-slate-800 block mb-2">6. อุปกรณ์ภายในห้องที่ใช้</label>
+        <div class="grid grid-cols-2 gap-2" id="m-eq-container"></div>
+        <input type="text" id="m-eq-other" placeholder="อุปกรณ์อื่นๆ (ถ้ามี)" class="w-full mt-2 px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white">
+      </div>
+
+      <!-- 7. Layout -->
+      <div>
+        <label class="font-bold text-slate-800 block mb-2">7. รูปแบบการจัดห้อง</label>
+        <select id="m-layout" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs bg-white font-semibold">
+          <option value="Classroom">Classroom (ห้องเรียน)</option>
+          <option value="Conference">Conference (โต๊ะประชุม)</option>
+          <option value="U-Shape">U-Shape (ตัวยู)</option>
+          <option value="Theatre">Theatre (เธียเตอร์ เก้าอี้ล้วน)</option>
+        </select>
+        <input type="text" id="m-layout-other" placeholder="รูปแบบอื่นๆ (ถ้ามี)" class="w-full mt-2 px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white">
+      </div>
+
+      <!-- Note -->
+      <div class="p-3 rounded-xl bg-amber-50 text-amber-900 text-[11px] leading-relaxed border border-amber-200">
+        * หากมีการจัดเลี้ยงอาหารหรือเครื่องดื่ม ผู้ดำเนินการต้องจัดเตรียมมาเอง
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-2">
+        <button type="submit" id="m-btn-submit" class="w-full h-12 rounded-2xl bg-blue-700 active:bg-blue-800 text-white font-heading text-sm font-bold shadow-md flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-[20px]">check_circle</span>
+          <span>ยืนยันการจอง</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/mobile.js"></script>
+</body>
+</html>
