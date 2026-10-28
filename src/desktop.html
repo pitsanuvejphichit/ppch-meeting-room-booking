@@ -386,22 +386,47 @@
               <div id="bookingDatesList" class="space-y-3"></div>
             </div>
 
-            <!-- ผู้ขอใช้ห้อง & หน่วยงาน -->
+            <!-- ผู้ขอใช้ห้อง & หน่วยงาน (Searchable Autocomplete Dropdown) -->
             <div class="form-light-card p-4 space-y-3">
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อผู้ขอใช้ห้องประชุม <span class="text-red-500">*</span></label>
-                <p class="text-[11px] text-slate-400 mb-1">กรุณาระบุ ชื่อ-สกุล</p>
-                <input type="text" id="formBookedBy" required placeholder="คำตอบของคุณ" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  ชื่อผู้ขอใช้ห้องประชุม <span class="text-red-500">*</span>
+                </label>
+                <p class="text-[11px] text-slate-400 mb-1.5">ค้นหาด้วยรหัสพนักงาน 6 หลัก, ชื่อ-นามสกุล, ตำแหน่ง หรือเลือกจากรายการ</p>
+                
+                <!-- Searchable Combobox -->
+                <div class="relative">
+                  <input type="hidden" id="formEmpId" value="">
+                  <div class="relative">
+                    <input type="text" id="formBookedBy" required autocomplete="off" placeholder="พิมพ์ชื่อ, นามสกุล หรือรหัสพนักงาน..." class="w-full pl-9 pr-9 py-2 border-b-2 border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900 font-medium transition" oninput="handleEmpSearch('dt')" onfocus="handleEmpSearch('dt')">
+                    <i class="fa-solid fa-magnifying-glass absolute left-1 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+                    <button type="button" id="formBookedByClearBtn" onclick="clearEmpSelection('dt')" class="hidden absolute right-1 top-2 text-slate-400 hover:text-slate-600 text-xs px-2 py-0.5 rounded-full hover:bg-slate-100 transition" title="ล้างการเลือก">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                  <!-- Dropdown Menu -->
+                  <div id="formBookedByDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-64 overflow-y-auto z-50 divide-y divide-slate-100">
+                    <!-- Dynamic employee options -->
+                  </div>
+                </div>
+                <!-- Selected Employee Indicator Badge -->
+                <div id="formEmpSelectedBadge" class="hidden mt-2 p-2 bg-cyan-50/80 border border-cyan-200 rounded-xl text-xs text-cyan-900 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-id-badge text-cyan-600 text-sm"></i>
+                    <span id="formEmpSelectedText">--</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">ตรวจสอบแล้ว</span>
+                </div>
               </div>
               
               <div class="pt-2">
-                <label class="block text-xs font-bold text-slate-700 mb-1">หน่วยงาน <span class="text-red-500">*</span></label>
-                <input type="text" id="formDepartment" required placeholder="คำตอบของคุณ" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
+                <label class="block text-xs font-bold text-slate-700 mb-1">หน่วยงาน / แผนก <span class="text-red-500">*</span></label>
+                <input type="text" id="formDepartment" required placeholder="ระบุหน่วยงานหรือเลือกจากชื่อพนักงานด้านบน" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
               </div>
 
               <div class="pt-2">
                 <label class="block text-xs font-bold text-slate-700 mb-1">หัวข้อการประชุม <span class="text-red-500">*</span></label>
-                <input type="text" id="formPurpose" required placeholder="คำตอบของคุณ" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
+                <input type="text" id="formPurpose" required placeholder="เช่น ประชุมวางแผนประจำเดือน, อบรมวิชาการ..." class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
               </div>
             </div>
 
@@ -608,6 +633,7 @@
             <button type="button" onclick="switchAdminSubTab('bookings')" id="adminSubTabBookingsBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs">จัดการคำขอจอง</button>
             <button type="button" onclick="switchAdminSubTab('rooms')" id="adminSubTabRoomsBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">ข้อมูลห้องประชุม (5 ห้อง)</button>
             <button type="button" onclick="switchAdminSubTab('overview')" id="adminSubTabOverviewBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">รายงานภาพรวม (Overview)</button>
+                      <button type="button" onclick="switchAdminSubTab('employees')" id="adminSubTabEmployeesBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">จัดการข้อมูลพนักงาน (Employees)</button>
           </div>
         </div>
 
@@ -767,7 +793,55 @@
           </div>
         </div>
         </div>
+      
+        <!-- Subtab 4: Employee Management (จัดการข้อมูลพนักงาน) -->
+        <div id="adminEmployeesSubSection" class="hidden space-y-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 border border-cyan-200 flex items-center justify-center text-base font-bold shadow-2xs">
+                  <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">ฐานข้อมูลพนักงาน (Employee Directory)</h3>
+                  <p class="text-[11px] text-slate-500">จัดการข้อมูลพนักงาน เพื่อใช้เติมชื่อและแผนกอัตโนมัติในแบบฟอร์มจอง</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="adminEmpCountBadge" class="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl">-- คน</span>
+                <input type="text" id="adminEmpSearchInput" oninput="filterAdminEmployees()" placeholder="ค้นหารหัส, ชื่อ, แผนก, ตำแหน่ง..." class="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500 w-64 shadow-2xs">
+                <button type="button" onclick="openEmployeeModal('add')" class="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                  <i class="fa-solid fa-user-plus text-xs"></i>
+                  <span>เพิ่มพนักงานใหม่</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-[580px] overflow-y-auto custom-scrollbar">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead class="bg-slate-100/80 text-slate-600 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider sticky top-0 bg-slate-100 z-10">
+                  <tr>
+                    <th class="py-3 px-4">รหัสพนักงาน (6 หลัก)</th>
+                    <th class="py-3 px-4">ชื่อ - นามสกุล</th>
+                    <th class="py-3 px-4">แผนก / ฝ่าย / กลุ่มงาน</th>
+                    <th class="py-3 px-4">ตำแหน่ง</th>
+                    <th class="py-3 px-4 text-center">สถานะ</th>
+                    <th class="py-3 px-4 text-center">จัดการ (Action)</th>
+                  </tr>
+                </thead>
+                <tbody id="adminEmployeesTableBody" class="divide-y divide-slate-100 text-slate-700">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+            <div id="adminEmployeesEmptyMsg" class="hidden text-center py-12 text-slate-400 text-xs">
+              <i class="fa-regular fa-user text-3xl mb-2 text-slate-300 block"></i>
+              ไม่พบข้อมูลพนักงานที่ตรงกับคำค้นหา
+            </div>
+          </div>
+        </div>
       </div>
+
 
     </main>
   </div>
@@ -895,12 +969,35 @@
           <div id="mbBookingDatesList" class="space-y-3"></div>
         </div>
         <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
-          <div><label class="block text-xs font-bold text-slate-700 mb-1">ชื่อผู้ขอใช้ <span class="text-red-500">*</span></label>
-          <input type="text" id="mbFormBookedBy" required placeholder="ชื่อ-สกุล" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900"></div>
-          <div><label class="block text-xs font-bold text-slate-700 mb-1">หน่วยงาน <span class="text-red-500">*</span></label>
-          <input type="text" id="mbFormDepartment" required placeholder="หน่วยงาน" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900"></div>
-          <div><label class="block text-xs font-bold text-slate-700 mb-1">หัวข้อการประชุม <span class="text-red-500">*</span></label>
-          <input type="text" id="mbFormPurpose" required placeholder="หัวข้อ" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900"></div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อผู้ขอใช้ห้องประชุม <span class="text-red-500">*</span></label>
+            <p class="text-[10px] text-slate-400 mb-1.5">ค้นหาด้วยรหัสพนักงาน หรือชื่อ-สกุล</p>
+            <div class="relative">
+              <input type="hidden" id="mbFormEmpId" value="">
+              <div class="relative">
+                <input type="text" id="mbFormBookedBy" required autocomplete="off" placeholder="พิมพ์ชื่อ หรือรหัสพนักงาน..." class="w-full pl-8 pr-8 py-2 border-b-2 border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900 font-medium" oninput="handleEmpSearch('mb')" onfocus="handleEmpSearch('mb')">
+                <i class="fa-solid fa-magnifying-glass absolute left-1 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+                <button type="button" id="mbFormBookedByClearBtn" onclick="clearEmpSelection('mb')" class="hidden absolute right-1 top-2 text-slate-400 hover:text-slate-600 text-xs px-2 py-0.5 rounded-full hover:bg-slate-100" title="ล้างการเลือก">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div id="mbFormBookedByDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-56 overflow-y-auto z-50 divide-y divide-slate-100">
+                <!-- Dynamic employee options -->
+              </div>
+            </div>
+            <div id="mbFormEmpSelectedBadge" class="hidden mt-1.5 p-1.5 bg-cyan-50 border border-cyan-200 rounded-lg text-[10px] text-cyan-900 flex items-center justify-between">
+              <span id="mbFormEmpSelectedText">--</span>
+              <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">✓ ตรวจสอบแล้ว</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">หน่วยงาน / แผนก <span class="text-red-500">*</span></label>
+            <input type="text" id="mbFormDepartment" required placeholder="หน่วยงาน" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">หัวข้อการประชุม <span class="text-red-500">*</span></label>
+            <input type="text" id="mbFormPurpose" required placeholder="หัวข้อการประชุม" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
+          </div>
         </div>
         <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2">
           <label class="block text-xs font-bold text-slate-700">การประชุมภายใน/ภายนอก</label>
@@ -968,6 +1065,7 @@
         <div class="flex bg-slate-100 p-1 rounded-xl">
           <button type="button" onclick="switchMbAdminSubTab('bookings')" id="mbAdminSubBookingsBtn" class="px-2.5 py-1 text-[10px] font-bold bg-cyan-600 text-white rounded-lg">การจอง</button>
           <button type="button" onclick="switchMbAdminSubTab('rooms')" id="mbAdminSubRoomsBtn" class="px-2.5 py-1 text-[10px] font-bold text-slate-600 rounded-lg">ห้อง</button>
+        <button type="button" onclick="switchMbAdminSubTab('employees')" id="mbAdminSubEmployeesBtn" class="px-2.5 py-1 text-[10px] font-bold text-slate-600 rounded-lg">พนักงาน</button>
         </div>
       </div>
       
@@ -976,6 +1074,13 @@
       </div>
       <div id="mbAdminRoomsContainer" class="hidden space-y-3">
         <!-- Rendered dynamically -->
+      </div>
+      <div id="mbAdminEmployeesContainer" class="hidden space-y-3">
+        <div class="flex gap-2">
+          <input type="text" id="mbAdminEmpSearchInput" oninput="renderAdminEmployeesTable(this.value)" placeholder="ค้นหาพนักงาน..." class="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs">
+          <button type="button" onclick="openEmployeeModal('add')" class="px-3 py-1.5 bg-cyan-600 text-white font-bold text-xs rounded-xl shadow-xs shrink-0">+ เพิ่ม</button>
+        </div>
+        <div id="mbAdminEmployeesList" class="space-y-2"></div>
       </div>
     </div>
 
@@ -1149,7 +1254,157 @@
   </div>
 
 
+  
+
   <!-- ============================================================== -->
+  <!-- SELF-SERVICE CANCEL BOOKING MODAL (ยกเลิกด้วยตนเอง พร้อมยืนยันรหัสพนักงาน) -->
+  <!-- ============================================================== -->
+  <div id="selfCancelModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-rose-600 to-red-700 p-5 text-white flex justify-between items-start">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-lg shadow-inner">
+            <i class="fa-solid fa-triangle-exclamation text-amber-300"></i>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold text-rose-200 uppercase tracking-widest">ระบบยกเลิกการจองด้วยตนเอง</div>
+            <h3 class="text-base font-bold mt-0.5">ยืนยันยกเลิกการจองห้องประชุม</h3>
+          </div>
+        </div>
+        <button type="button" onclick="closeSelfCancelModal()" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4 text-xs">
+        <!-- Booking Details Summary Card -->
+        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-medium">ห้องประชุม:</span>
+            <span id="selfCancelRoomName" class="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">--</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-medium">วันที่ / เวลา:</span>
+            <span id="selfCancelDateTime" class="font-bold font-mono text-cyan-800">--</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-medium">หัวข้อการประชุม:</span>
+            <span id="selfCancelPurpose" class="font-bold text-slate-800 text-right">--</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 font-medium">ผู้ขอใช้ห้อง:</span>
+            <span id="selfCancelBookedBy" class="font-bold text-slate-800 text-right">--</span>
+          </div>
+        </div>
+
+        <!-- Employee ID Verification Box -->
+        <div class="space-y-2 pt-1">
+          <label class="block font-bold text-slate-800 text-xs">
+            <i class="fa-solid fa-id-badge text-cyan-600 mr-1"></i>
+            กรอกรหัสพนักงาน 6 หลักของผู้ขอจอง <span class="text-red-500">*</span>
+          </label>
+          <p class="text-[11px] text-slate-500">กรุณาระบุรหัสพนักงานของผู้ขอจองเพื่อยืนยันสิทธิ์ในการยกเลิกรายการนี้</p>
+          <div class="relative">
+            <input type="text" id="selfCancelEmpId" maxlength="6" inputmode="numeric" oninput="handleSelfCancelEmpInput(this.value)" placeholder="เช่น 000023" class="w-full text-center font-mono text-xl tracking-widest font-black py-2.5 bg-slate-50 border-2 border-slate-300 rounded-xl focus:border-rose-500 focus:bg-white focus:outline-none transition">
+          </div>
+          <div id="selfCancelEmpFeedback" class="text-[11px] font-bold text-slate-600 min-h-[18px]"></div>
+          <div id="selfCancelErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+            <i class="fa-solid fa-circle-exclamation mr-1"></i>
+            <span id="selfCancelErrorText">รหัสพนักงานไม่ถูกต้อง</span>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeSelfCancelModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold rounded-xl transition">
+            ย้อนกลับ
+          </button>
+          <button type="button" id="selfCancelSubmitBtn" onclick="confirmSelfCancelBooking()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i class="fa-regular fa-trash-can"></i>
+            <span>ยืนยันยกเลิก</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- EMPLOYEE ADD / EDIT MODAL (Admin Directory)                   -->
+  <!-- ============================================================== -->
+  <div id="adminEmployeeModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9996] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
+      <div class="bg-gradient-to-r from-cyan-600 to-blue-700 p-4 text-white flex justify-between items-center">
+        <h3 class="text-sm font-bold flex items-center gap-2">
+          <i class="fa-solid fa-user-gear"></i>
+          <span id="empModalTitle">เพิ่มข้อมูลพนักงานใหม่</span>
+        </h3>
+        <button type="button" onclick="closeEmployeeModal()" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="adminEmployeeForm" onsubmit="handleEmployeeFormSubmit(event)" class="p-6 space-y-3.5 text-xs">
+        <input type="hidden" id="empModalMode" value="add">
+        
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">รหัสพนักงาน (6 หลัก) <span class="text-red-500">*</span></label>
+          <input type="text" id="empModalId" required maxlength="6" placeholder="เช่น 000023" class="w-full px-3 py-2 bg-slate-50 font-mono font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:bg-white focus:outline-none">
+          <p class="text-[10px] text-slate-400 mt-0.5">ระบบจะเติมเลข 0 ด้านหน้าให้อัตโนมัติจนครบ 6 หลัก (เช่น 23 ➔ 000023)</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">คำนำหน้า</label>
+            <select id="empModalPrefix" class="w-full px-2 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+              <option value="นาย">นาย</option>
+              <option value="นาง">นาง</option>
+              <option value="นางสาว">นางสาว</option>
+              <option value="นพ.">นพ.</option>
+              <option value="พญ.">พญ.</option>
+              <option value="ทพ.">ทพ.</option>
+              <option value="ทพญ.">ทพญ.</option>
+              <option value="ภก.">ภก.</option>
+              <option value="ภญ.">ภญ.</option>
+              <option value="">(ไม่ระบุ)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ชื่อ <span class="text-red-500">*</span></label>
+            <input type="text" id="empModalFirstName" required placeholder="ชื่อ" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">นามสกุล <span class="text-red-500">*</span></label>
+            <input type="text" id="empModalLastName" required placeholder="นามสกุล" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">แผนก / ฝ่าย / กลุ่มงาน <span class="text-red-500">*</span></label>
+          <input type="text" id="empModalDepartment" required placeholder="เช่น Human Resource Department" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ตำแหน่งงาน <span class="text-red-500">*</span></label>
+          <input type="text" id="empModalPosition" required placeholder="เช่น HoD, Human Resource" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">สถานะการทำงาน</label>
+          <select id="empModalIsActive" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none font-bold">
+            <option value="true">ใช้งาน (Active)</option>
+            <option value="false">ระงับชั่วคราว (Inactive)</option>
+          </select>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeEmployeeModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold rounded-xl transition">ยกเลิก</button>
+          <button type="submit" id="empModalSubmitBtn" class="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white font-bold rounded-xl shadow-md transition">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<!-- ============================================================== -->
   <!-- JAVASCRIPT AUTO-DETECTION ENGINE & CLIENT BRIDGE               -->
   <!-- ============================================================== -->
   <script>
@@ -1190,7 +1445,8 @@
                   roomName: b.room_name || '',
                   bookingDate: b.booking_date || '',
                   startTime: (b.start_time || '').substring(0, 5),
-                  endTime: (b.end_time || '').substring(0, 5),
+                  endTime: (b.end_time || \'\').substring(0, 5),
+                  empId: b.emp_id || \'\',
                   bookedBy: b.requester_name || b.booked_by || b.bookedBy || '-',
                   department: b.department || '-',
                   phone: b.phone || '-',
@@ -1223,7 +1479,8 @@
                   roomName: b.room_name || '',
                   bookingDate: b.booking_date || '',
                   startTime: (b.start_time || '').substring(0, 5),
-                  endTime: (b.end_time || '').substring(0, 5),
+                  endTime: (b.end_time || \'\').substring(0, 5),
+                  empId: b.emp_id || \'\',
                   bookedBy: b.requester_name || b.booked_by || b.bookedBy || '-',
                   department: b.department || '-',
                   phone: b.phone || '-',
@@ -1393,8 +1650,9 @@
                 roomName: b.room_name,
                 bookingDate: b.booking_date,
                 startTime: (b.start_time || '').substring(0, 5),
-                endTime: (b.end_time || '').substring(0, 5),
-                bookedBy: b.booked_by || b.purpose,
+                endTime: (b.end_time || \'\').substring(0, 5),
+                  empId: b.emp_id || \'\',
+                  bookedBy: b.booked_by || b.purpose,
                 department: b.department,
                 phone: b.phone,
                 purpose: b.purpose || b.booked_by,
@@ -1456,6 +1714,642 @@
       { id: 'RM-005', name: 'ห้องประชุมชั้น 5 (ห้อง VIP3)', capacity: '8-12 คน', location: 'ชั้น 5', facilities: 'สมาร์ททีวี VIP, โซฟาหลุยส์', color: '#db2777', status: 'พร้อมใช้งาน' }
     ];
 
+    
+    // ==========================================================================
+    // 👥 EMPLOYEE DIRECTORY & AUTOCOMPLETE ENGINE (Supabase Real-time Sync)
+    // ==========================================================================
+    let appEmployeesList = [];
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    async function loadEmployees() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/employees?order=emp_id.asc`, {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          appEmployeesList = data;
+          console.log('Loaded', appEmployeesList.length, 'employees from Supabase directory');
+          renderAdminEmployeesTable();
+        }
+      } catch (err) {
+        console.warn('Failed to load employees:', err);
+      }
+    }
+
+    function handleEmpSearch(mode) {
+      const isMb = mode === 'mb';
+      const inputId = isMb ? 'mbFormBookedBy' : 'formBookedBy';
+      const dropdownId = isMb ? 'mbFormBookedByDropdown' : 'formBookedByDropdown';
+      const clearBtnId = isMb ? 'mbFormBookedByClearBtn' : 'formBookedByClearBtn';
+
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const clearBtn = document.getElementById(clearBtnId);
+      if (!input || !dropdown) return;
+
+      const q = (input.value || '').trim().toLowerCase();
+      if (clearBtn) {
+        if (q) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+
+      // Filter active employees matching query
+      const filtered = (appEmployeesList || []).filter(e => {
+        if (e.is_active === false) return false;
+        if (!q) return true;
+        const idMatch = (e.emp_id || '').toLowerCase().includes(q);
+        const nameMatch = (e.full_name || '').toLowerCase().includes(q) ||
+                          (e.first_name || '').toLowerCase().includes(q) ||
+                          (e.last_name || '').toLowerCase().includes(q);
+        const deptMatch = (e.department || '').toLowerCase().includes(q);
+        const posMatch = (e.position || '').toLowerCase().includes(q);
+        return idMatch || nameMatch || deptMatch || posMatch;
+      }).slice(0, 30);
+
+      if (filtered.length === 0) {
+        dropdown.innerHTML = `
+          <div class="p-3 text-center text-slate-400 text-xs">
+            <i class="fa-solid fa-user-xmark mr-1"></i> ไม่พบพนักงานที่ตรงกับ "${escapeHtml(input.value)}"
+          </div>
+        `;
+        dropdown.classList.remove('hidden');
+        return;
+      }
+
+      dropdown.innerHTML = filtered.map(emp => {
+        const safeName = escapeHtml(emp.full_name || `${emp.prefix || ''}${emp.first_name} ${emp.last_name}`);
+        const safeDept = escapeHtml(emp.department || '-');
+        const safePos = escapeHtml(emp.position || '-');
+        const safeEmpJson = encodeURIComponent(JSON.stringify(emp));
+
+        return `
+          <div onclick="selectEmployee('${safeEmpJson}', '${mode}')" class="p-2.5 hover:bg-cyan-50 cursor-pointer flex items-center justify-between gap-3 text-xs transition border-b border-slate-100 last:border-b-0">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="font-mono font-bold text-cyan-800 bg-cyan-100/70 border border-cyan-200 px-2 py-0.5 rounded text-[11px] shrink-0">${emp.emp_id}</span>
+              <div class="truncate">
+                <div class="font-bold text-slate-900 truncate">${safeName}</div>
+                <div class="text-[10.5px] text-slate-500 truncate">${safePos} • <span class="text-cyan-700 font-medium">${safeDept}</span></div>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-300 shrink-0"></i>
+          </div>
+        `;
+      }).join('');
+
+      dropdown.classList.remove('hidden');
+    }
+
+    function selectEmployee(empJsonEncoded, mode) {
+      try {
+        const emp = JSON.parse(decodeURIComponent(empJsonEncoded));
+        const isMb = mode === 'mb';
+        const inputId = isMb ? 'mbFormBookedBy' : 'formBookedBy';
+        const empIdInputId = isMb ? 'mbFormEmpId' : 'formEmpId';
+        const deptInputId = isMb ? 'mbFormDepartment' : 'formDepartment';
+        const dropdownId = isMb ? 'mbFormBookedByDropdown' : 'formBookedByDropdown';
+        const badgeId = isMb ? 'mbFormEmpSelectedBadge' : 'formEmpSelectedBadge';
+        const badgeTextId = isMb ? 'mbFormEmpSelectedText' : 'formEmpSelectedText';
+        const clearBtnId = isMb ? 'mbFormBookedByClearBtn' : 'formBookedByClearBtn';
+
+        const nameVal = (emp.full_name || `${emp.prefix || ''}${emp.first_name} ${emp.last_name}`).trim();
+        const input = document.getElementById(inputId);
+        const empIdInput = document.getElementById(empIdInputId);
+        const deptInput = document.getElementById(deptInputId);
+        const dropdown = document.getElementById(dropdownId);
+        const badge = document.getElementById(badgeId);
+        const badgeText = document.getElementById(badgeTextId);
+        const clearBtn = document.getElementById(clearBtnId);
+
+        if (input) input.value = nameVal;
+        if (empIdInput) empIdInput.value = emp.emp_id;
+        if (deptInput && emp.department) deptInput.value = emp.department;
+        if (dropdown) dropdown.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.remove('hidden');
+
+        if (badge && badgeText) {
+          badgeText.innerHTML = `รหัส <strong>[${emp.emp_id}]</strong>: ${nameVal} (${emp.position || ''}) • ${emp.department || ''}`;
+          badge.classList.remove('hidden');
+        }
+      } catch (e) {
+        console.error('selectEmployee error:', e);
+      }
+    }
+
+    function clearEmpSelection(mode) {
+      const isMb = mode === 'mb';
+      const input = document.getElementById(isMb ? 'mbFormBookedBy' : 'formBookedBy');
+      const empIdInput = document.getElementById(isMb ? 'mbFormEmpId' : 'formEmpId');
+      const dropdown = document.getElementById(isMb ? 'mbFormBookedByDropdown' : 'formBookedByDropdown');
+      const badge = document.getElementById(isMb ? 'mbFormEmpSelectedBadge' : 'formEmpSelectedBadge');
+      const clearBtn = document.getElementById(isMb ? 'mbFormBookedByClearBtn' : 'formBookedByClearBtn');
+
+      if (input) input.value = '';
+      if (empIdInput) empIdInput.value = '';
+      if (dropdown) dropdown.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
+      if (clearBtn) clearBtn.classList.add('hidden');
+      if (input) input.focus();
+    }
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', function(e) {
+      const dtDd = document.getElementById('formBookedByDropdown');
+      const dtIn = document.getElementById('formBookedBy');
+      if (dtDd && !dtDd.contains(e.target) && dtIn && e.target !== dtIn) {
+        dtDd.classList.add('hidden');
+      }
+      const mbDd = document.getElementById('mbFormBookedByDropdown');
+      const mbIn = document.getElementById('mbFormBookedBy');
+      if (mbDd && !mbDd.contains(e.target) && mbIn && e.target !== mbIn) {
+        mbDd.classList.add('hidden');
+      }
+    });
+
+    // ==========================================================================
+    // 🛡️ SELF-SERVICE CANCELLATION ENGINE (ยกเลิกด้วยรหัสพนักงาน)
+    // ==========================================================================
+    let currentSelfCancelBooking = null;
+
+    function openSelfCancelModal(bookingId) {
+      const all = (overviewBookings || []).concat(appData.bookings || []);
+      const b = all.find(x => (x.id === bookingId || x.bookingId === bookingId));
+      if (!b) {
+        showToast('ไม่พบข้อมูลการจองนี้', 'error');
+        return;
+      }
+
+      currentSelfCancelBooking = b;
+
+      const roomEl = document.getElementById('selfCancelRoomName');
+      const dtEl = document.getElementById('selfCancelDateTime');
+      const purposeEl = document.getElementById('selfCancelPurpose');
+      const whoEl = document.getElementById('selfCancelBookedBy');
+      const empIdInput = document.getElementById('selfCancelEmpId');
+      const fb = document.getElementById('selfCancelEmpFeedback');
+      const errBox = document.getElementById('selfCancelErrorMsg');
+
+      if (roomEl) roomEl.textContent = b.roomName || '-';
+      if (dtEl) dtEl.textContent = `${formatThaiDate(b.bookingDate)} | เวลา ${b.startTime} - ${b.endTime} น.`;
+      if (purposeEl) purposeEl.textContent = b.purpose || '-';
+      if (whoEl) whoEl.textContent = `${b.bookedBy || '-'} (${b.department || '-'})`;
+      if (empIdInput) {
+        empIdInput.value = '';
+        setTimeout(() => empIdInput.focus(), 150);
+      }
+      if (fb) fb.innerHTML = '';
+      if (errBox) errBox.classList.add('hidden');
+
+      const modal = document.getElementById('selfCancelModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeSelfCancelModal() {
+      const modal = document.getElementById('selfCancelModal');
+      if (modal) modal.classList.add('hidden');
+      currentSelfCancelBooking = null;
+    }
+
+    function handleSelfCancelEmpInput(val) {
+      const fb = document.getElementById('selfCancelEmpFeedback');
+      const errBox = document.getElementById('selfCancelErrorMsg');
+      if (errBox) errBox.classList.add('hidden');
+      if (!fb) return;
+
+      const raw = (val || '').trim();
+      if (!raw) {
+        fb.innerHTML = '';
+        return;
+      }
+      const pad = raw.padStart(6, '0');
+      const found = (appEmployeesList || []).find(e => e.emp_id === pad);
+      if (found) {
+        fb.innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>ผู้ยกเลิก: <strong>[${found.emp_id}]</strong> ${found.full_name || `${found.prefix || ''}${found.first_name} ${found.last_name}`} (${found.department || ''})</span>`;
+      } else if (raw === '1234') {
+        fb.innerHTML = `<span class="text-amber-600"><i class="fa-solid fa-key mr-1"></i>รหัส Admin Master Passcode (ยืนยันสิทธิ์ยกเลิก)</span>`;
+      } else {
+        fb.innerHTML = `<span class="text-slate-400">รหัส [${pad}]</span>`;
+      }
+    }
+
+    async function confirmSelfCancelBooking() {
+      if (!currentSelfCancelBooking) return;
+
+      const input = document.getElementById('selfCancelEmpId');
+      const errBox = document.getElementById('selfCancelErrorMsg');
+      const errText = document.getElementById('selfCancelErrorText');
+      const submitBtn = document.getElementById('selfCancelSubmitBtn');
+      const rawInput = (input ? input.value : '').trim();
+
+      if (!rawInput) {
+        if (errBox && errText) {
+          errText.textContent = 'กรุณากรอกรหัสพนักงาน 6 หลัก';
+          errBox.classList.remove('hidden');
+        }
+        if (input) input.focus();
+        return;
+      }
+
+      const padEmpId = rawInput.padStart(6, '0');
+      const bookingEmpId = (currentSelfCancelBooking.empId || '').trim();
+      const isAdminOverride = (rawInput === '1234' || padEmpId === '001234');
+
+      let isVerified = false;
+      if (isAdminOverride) {
+        isVerified = true;
+      } else if (bookingEmpId && bookingEmpId !== '000000') {
+        isVerified = (padEmpId === bookingEmpId);
+      } else {
+        const matchedEmp = (appEmployeesList || []).find(e => e.emp_id === padEmpId);
+        if (matchedEmp) isVerified = true;
+      }
+
+      if (!isVerified) {
+        if (errBox && errText) {
+          errText.textContent = `รหัสพนักงาน [${padEmpId}] ไม่ตรงกับผู้ขอจองรายการนี้ (สงวนสิทธิ์ยกเลิกเฉพาะผู้ขอจอง)`;
+          errBox.classList.remove('hidden');
+        }
+        if (input) {
+          input.classList.add('ring-2', 'ring-rose-500');
+          input.focus();
+        }
+        return;
+      }
+
+      if (errBox) errBox.classList.add('hidden');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> กำลังยกเลิก...';
+      }
+
+      const bId = currentSelfCancelBooking.id || currentSelfCancelBooking.bookingId;
+
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/room_bookings?booking_id=eq.${bId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'ยกเลิก' })
+        });
+
+        await fetch(`${SUPABASE_URL}/rest/v1/room_bookings?booking_no=eq.${bId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'ยกเลิก' })
+        });
+
+        try {
+          fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'adminUpdateBookingStatus',
+              passcode: '1234',
+              bookingId: bId,
+              newStatus: 'ยกเลิก',
+              remarks: `พนักงานยกเลิกด้วยตนเอง (รหัส ${padEmpId})`
+            })
+          });
+        } catch (gasErr) {
+          console.warn('GAS mirror error:', gasErr);
+        }
+
+        (overviewBookings || []).forEach(b => {
+          if (b.id === bId || b.bookingId === bId) b.status = 'ยกเลิก';
+        });
+        (appData.bookings || []).forEach(b => {
+          if (b.id === bId || b.bookingId === bId) b.status = 'ยกเลิก';
+        });
+
+        closeSelfCancelModal();
+
+        filterDayBookings(selectedDate);
+        renderCalendarGrid();
+        if (typeof renderMbCalendarView === 'function') renderMbCalendarView();
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'success',
+            title: 'ยกเลิกการจองสำเร็จ',
+            text: `รายการจองรหัส ${bId} ได้รับการยกเลิกเรียบร้อยแล้ว ช่วงเวลานี้ว่างให้ผู้อื่นใช้งานได้ทันที`,
+            confirmButtonColor: '#0284c7'
+          });
+        } else {
+          showToast('ยกเลิกการจองเรียบร้อยแล้ว', 'success');
+        }
+      } catch (err) {
+        console.error('Cancel booking error:', err);
+        showToast('เกิดข้อผิดพลาดในการยกเลิก กรุณาลองใหม่อีกครั้ง', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-regular fa-trash-can mr-1.5"></i> ยืนยันยกเลิก';
+        }
+      }
+    }
+
+    // ==========================================================================
+    // 🏢 ADMIN EMPLOYEE DIRECTORY MANAGEMENT FUNCTIONS
+    // ==========================================================================
+    function renderAdminEmployeesTable(filterQ = '') {
+      const tbody = document.getElementById('adminEmployeesTableBody');
+      const mbList = document.getElementById('mbAdminEmployeesList');
+      const emptyMsg = document.getElementById('adminEmployeesEmptyMsg');
+      const badge = document.getElementById('adminEmpCountBadge');
+
+      const q = filterQ.trim().toLowerCase();
+      const list = (appEmployeesList || []).filter(e => {
+        if (!q) return true;
+        return (e.emp_id || '').toLowerCase().includes(q) ||
+               (e.full_name || '').toLowerCase().includes(q) ||
+               (e.first_name || '').toLowerCase().includes(q) ||
+               (e.last_name || '').toLowerCase().includes(q) ||
+               (e.department || '').toLowerCase().includes(q) ||
+               (e.position || '').toLowerCase().includes(q);
+      });
+
+      if (badge) badge.textContent = `${list.length} / ${(appEmployeesList || []).length} คน`;
+
+      if (list.length === 0) {
+        if (tbody) tbody.innerHTML = '';
+        if (mbList) mbList.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">ไม่พบข้อมูลพนักงาน</div>';
+        if (emptyMsg) emptyMsg.classList.remove('hidden');
+        return;
+      }
+      if (emptyMsg) emptyMsg.classList.add('hidden');
+
+      if (tbody) {
+        tbody.innerHTML = list.map(emp => {
+          const isActive = emp.is_active !== false;
+          const statusBadge = isActive
+            ? '<span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">ใช้งาน</span>'
+            : '<span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-500 border border-slate-300">พักงาน</span>';
+          const safeEmp = encodeURIComponent(JSON.stringify(emp));
+
+          return `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="py-3 px-4 font-mono font-bold text-cyan-800 bg-slate-50/50">
+                <span class="bg-cyan-100/70 border border-cyan-200 px-2 py-0.5 rounded">${emp.emp_id}</span>
+              </td>
+              <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(emp.full_name || `${emp.prefix || ''}${emp.first_name} ${emp.last_name}`)}</td>
+              <td class="py-3 px-4 text-slate-700 font-medium">${escapeHtml(emp.department || '-')}</td>
+              <td class="py-3 px-4 text-slate-600">${escapeHtml(emp.position || '-')}</td>
+              <td class="py-3 px-4 text-center">${statusBadge}</td>
+              <td class="py-3 px-4 text-center">
+                <div class="inline-flex items-center gap-1.5">
+                  <button type="button" onclick="openEmployeeModal('edit', '${safeEmp}')" class="p-1.5 text-cyan-600 hover:bg-cyan-50 rounded-lg transition cursor-pointer" title="แก้ไข">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                  </button>
+                  <button type="button" onclick="toggleEmployeeStatus('${emp.emp_id}', ${isActive})" class="p-1.5 ${isActive ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'} rounded-lg transition cursor-pointer" title="${isActive ? 'ระงับชั่วคราว' : 'เปิดใช้งาน'}">
+                    <i class="fa-solid ${isActive ? 'fa-user-slash' : 'fa-user-check'} text-xs"></i>
+                  </button>
+                  <button type="button" onclick="deleteEmployee('${emp.emp_id}')" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer" title="ลบพนักงาน">
+                    <i class="fa-regular fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      if (mbList) {
+        mbList.innerHTML = list.map(emp => {
+          const isActive = emp.is_active !== false;
+          const safeEmp = encodeURIComponent(JSON.stringify(emp));
+          return `
+            <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2 text-xs shadow-2xs">
+              <div class="flex justify-between items-center">
+                <span class="font-mono font-bold text-cyan-800 bg-cyan-100/70 border border-cyan-200 px-2 py-0.5 rounded text-[10.5px]">${emp.emp_id}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">${isActive ? 'ใช้งาน' : 'พักงาน'}</span>
+              </div>
+              <div class="font-bold text-slate-900">${escapeHtml(emp.full_name || `${emp.prefix || ''}${emp.first_name} ${emp.last_name}`)}</div>
+              <div class="text-[11px] text-slate-500">${escapeHtml(emp.position || '-')} • <strong class="text-slate-700">${escapeHtml(emp.department || '-')}</strong></div>
+              <div class="flex justify-end gap-1 pt-1.5 border-t border-slate-100">
+                <button type="button" onclick="openEmployeeModal('edit', '${safeEmp}')" class="px-2.5 py-1 text-[11px] font-bold bg-cyan-50 text-cyan-700 rounded-lg">แก้ไข</button>
+                <button type="button" onclick="toggleEmployeeStatus('${emp.emp_id}', ${isActive})" class="px-2.5 py-1 text-[11px] font-bold bg-slate-100 text-slate-700 rounded-lg">${isActive ? 'พักงาน' : 'เปิด'}</button>
+                <button type="button" onclick="deleteEmployee('${emp.emp_id}')" class="px-2.5 py-1 text-[11px] font-bold bg-rose-50 text-rose-700 rounded-lg">ลบ</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function filterAdminEmployees() {
+      const input = document.getElementById('adminEmpSearchInput');
+      const q = input ? input.value : '';
+      renderAdminEmployeesTable(q);
+    }
+
+    function openEmployeeModal(mode, empJsonEncoded = null) {
+      const modal = document.getElementById('adminEmployeeModal');
+      const title = document.getElementById('empModalTitle');
+      const modeInput = document.getElementById('empModalMode');
+      const idInput = document.getElementById('empModalId');
+      const prefixSelect = document.getElementById('empModalPrefix');
+      const fnInput = document.getElementById('empModalFirstName');
+      const lnInput = document.getElementById('empModalLastName');
+      const deptInput = document.getElementById('empModalDepartment');
+      const posInput = document.getElementById('empModalPosition');
+      const activeSelect = document.getElementById('empModalIsActive');
+
+      if (!modal) return;
+      modeInput.value = mode;
+
+      if (mode === 'edit' && empJsonEncoded) {
+        const emp = JSON.parse(decodeURIComponent(empJsonEncoded));
+        title.textContent = `แก้ไขข้อมูลพนักงาน [${emp.emp_id}]`;
+        idInput.value = emp.emp_id;
+        idInput.readOnly = true;
+        idInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+        prefixSelect.value = emp.prefix || 'นาย';
+        fnInput.value = emp.first_name || '';
+        lnInput.value = emp.last_name || '';
+        deptInput.value = emp.department || '';
+        posInput.value = emp.position || '';
+        activeSelect.value = String(emp.is_active !== false);
+      } else {
+        title.textContent = 'เพิ่มข้อมูลพนักงานใหม่';
+        idInput.value = '';
+        idInput.readOnly = false;
+        idInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+        prefixSelect.value = 'นาย';
+        fnInput.value = '';
+        lnInput.value = '';
+        deptInput.value = '';
+        posInput.value = '';
+        activeSelect.value = 'true';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeEmployeeModal() {
+      const modal = document.getElementById('adminEmployeeModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function handleEmployeeFormSubmit(e) {
+      e.preventDefault();
+      const mode = document.getElementById('empModalMode').value;
+      const rawId = document.getElementById('empModalId').value.trim();
+      const padId = rawId.padStart(6, '0');
+      const prefix = document.getElementById('empModalPrefix').value;
+      const fn = document.getElementById('empModalFirstName').value.trim();
+      const ln = document.getElementById('empModalLastName').value.trim();
+      const dept = document.getElementById('empModalDepartment').value.trim();
+      const pos = document.getElementById('empModalPosition').value.trim();
+      const isActive = document.getElementById('empModalIsActive').value === 'true';
+      const submitBtn = document.getElementById('empModalSubmitBtn');
+
+      if (!fn || !dept || !pos) {
+        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+        return;
+      }
+
+      const fullName = `${prefix}${fn} ${ln}`.trim();
+      const empData = {
+        emp_id: padId,
+        prefix: prefix,
+        first_name: fn,
+        last_name: ln,
+        full_name: fullName,
+        department: dept,
+        position: pos,
+        is_active: isActive
+      };
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> กำลังบันทึก...';
+      }
+
+      try {
+        if (mode === 'add') {
+          const existing = (appEmployeesList || []).find(x => x.emp_id === padId);
+          if (existing) {
+            showToast(`รหัสพนักงาน ${padId} มีอยู่ในระบบแล้ว`, 'error');
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = 'บันทึกข้อมูล';
+            }
+            return;
+          }
+          await fetch(`${SUPABASE_URL}/rest/v1/employees`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(empData)
+          });
+          appEmployeesList.push(empData);
+          appEmployeesList.sort((a,b) => (a.emp_id || '').localeCompare(b.emp_id || ''));
+          showToast(`เพิ่มพนักงาน [${padId}] ${fullName} เรียบร้อยแล้ว`, 'success');
+        } else {
+          await fetch(`${SUPABASE_URL}/rest/v1/employees?emp_id=eq.${padId}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(empData)
+          });
+          const idx = (appEmployeesList || []).findIndex(x => x.emp_id === padId);
+          if (idx !== -1) appEmployeesList[idx] = { ...appEmployeesList[idx], ...empData };
+          showToast(`อัปเดตข้อมูลพนักงาน [${padId}] เรียบร้อยแล้ว`, 'success');
+        }
+
+        closeEmployeeModal();
+        renderAdminEmployeesTable();
+      } catch (err) {
+        console.error('Save employee error:', err);
+        showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูลพนักงาน', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'บันทึกข้อมูล';
+        }
+      }
+    }
+
+    async function toggleEmployeeStatus(empId, currentActive) {
+      const newStatus = !currentActive;
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/employees?emp_id=eq.${empId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_active: newStatus })
+        });
+        const emp = (appEmployeesList || []).find(x => x.emp_id === empId);
+        if (emp) emp.is_active = newStatus;
+        renderAdminEmployeesTable();
+        showToast(`เปลี่ยนสถานะพนักงาน [${empId}] เป็น "${newStatus ? 'ใช้งาน' : 'พักงาน'}" แล้ว`, 'success');
+      } catch (e) {
+        console.error('toggleEmployeeStatus error:', e);
+        showToast('ไม่สามารถเปลี่ยนสถานะพนักงานได้', 'error');
+      }
+    }
+
+    async function deleteEmployee(empId) {
+      if (typeof Swal !== 'undefined') {
+        const result = await Swal.fire({
+          title: `ยืนยันลบพนักงานรหัส ${empId}?`,
+          text: 'ข้อมูลพนักงานจะถูกลบออกจากฐานข้อมูล ไม่สามารถย้อนกลับได้',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#e11d48',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: 'ลบข้อมูล',
+          cancelButtonText: 'ยกเลิก'
+        });
+        if (!result.isConfirmed) return;
+      } else {
+        if (!confirm(`ยืนยันลบข้อมูลพนักงานรหัส ${empId}?`)) return;
+      }
+
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/employees?emp_id=eq.${empId}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        appEmployeesList = (appEmployeesList || []).filter(x => x.emp_id !== empId);
+        renderAdminEmployeesTable();
+        showToast(`ลบข้อมูลพนักงาน [${empId}] เรียบร้อยแล้ว`, 'success');
+      } catch (e) {
+        console.error('deleteEmployee error:', e);
+        showToast('ไม่สามารถลบข้อมูลพนักงานได้', 'error');
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // Safety timeout to ensure loading overlay always dismisses even on network lag
       setTimeout(() => {
@@ -1475,6 +2369,7 @@
         renderCalendar();
         selectDate(selectedDateStr);
         loadOverviewData();
+        loadEmployees();
       } catch (err) {
         console.error('Initialization error:', err);
         const loader = document.getElementById('loading');
@@ -1753,6 +2648,7 @@
       if (calMonth > 11) { calMonth = 0; calYear++; }
       renderCalendar();
       loadOverviewData();
+        loadEmployees();
     }
 
     function goToday() {
@@ -1866,6 +2762,7 @@
       document.getElementById('mbStepOverview').classList.remove('hidden');
       setMobileNavActive('mbNavOverviewBtn');
       loadOverviewData();
+        loadEmployees();
     }
 
     function setMobileNavActive(activeBtnId) {
@@ -1901,6 +2798,7 @@
       }
 
       loadOverviewData();
+        loadEmployees();
     }
 
     function loadOverviewData() {
@@ -2292,55 +3190,68 @@
       const bSec = document.getElementById('adminBookingsSubSection');
       const rSec = document.getElementById('adminRoomsSubSection');
       const oSec = document.getElementById('adminOverviewSubSection');
+      const eSec = document.getElementById('adminEmployeesSubSection');
       const bBtn = document.getElementById('adminSubTabBookingsBtn');
       const rBtn = document.getElementById('adminSubTabRoomsBtn');
       const oBtn = document.getElementById('adminSubTabOverviewBtn');
+      const eBtn = document.getElementById('adminSubTabEmployeesBtn');
+
+      // Reset all buttons
+      [bBtn, rBtn, oBtn, eBtn].forEach(btn => {
+        if (btn) btn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer';
+      });
+      // Hide all sections
+      [bSec, rSec, oSec, eSec].forEach(sec => {
+        if (sec) sec.classList.add('hidden');
+      });
 
       if (sub === 'bookings') {
         if (bSec) bSec.classList.remove('hidden');
-        if (rSec) rSec.classList.add('hidden');
-        if (oSec) oSec.classList.add('hidden');
-        if (bBtn) bBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs';
-        if (rBtn) rBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
-        if (oBtn) oBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        if (bBtn) bBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer';
         renderAdminBookings();
       } else if (sub === 'rooms') {
-        if (bSec) bSec.classList.add('hidden');
         if (rSec) rSec.classList.remove('hidden');
-        if (oSec) oSec.classList.add('hidden');
-        if (rBtn) rBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs';
-        if (bBtn) bBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
-        if (oBtn) oBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        if (rBtn) rBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer';
         renderAdminRooms();
       } else if (sub === 'overview') {
-        if (bSec) bSec.classList.add('hidden');
-        if (rSec) rSec.classList.add('hidden');
         if (oSec) oSec.classList.remove('hidden');
-        if (oBtn) oBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs';
-        if (bBtn) bBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
-        if (rBtn) rBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        if (oBtn) oBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer';
         loadOverviewData();
+        loadEmployees();
+      } else if (sub === 'employees') {
+        if (eSec) eSec.classList.remove('hidden');
+        if (eBtn) eBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer';
+        renderAdminEmployeesTable();
       }
     }
 
     function switchMbAdminSubTab(sub) {
       const bSec = document.getElementById('mbAdminBookingsContainer');
       const rSec = document.getElementById('mbAdminRoomsContainer');
+      const eSec = document.getElementById('mbAdminEmployeesContainer');
       const bBtn = document.getElementById('mbAdminSubBookingsBtn');
       const rBtn = document.getElementById('mbAdminSubRoomsBtn');
+      const eBtn = document.getElementById('mbAdminSubEmployeesBtn');
+
+      [bBtn, rBtn, eBtn].forEach(btn => {
+        if (btn) btn.className = 'px-2.5 py-1 text-[10px] font-bold text-slate-600 rounded-lg cursor-pointer';
+      });
+      [bSec, rSec, eSec].forEach(sec => {
+        if (sec) sec.classList.add('hidden');
+      });
 
       if (sub === 'bookings') {
         if (bSec) bSec.classList.remove('hidden');
-        if (rSec) rSec.classList.add('hidden');
-        if (bBtn) bBtn.className = 'px-2.5 py-1 text-[10px] font-bold bg-cyan-600 text-white rounded-lg';
-        if (rBtn) rBtn.className = 'px-2.5 py-1 text-[10px] font-bold text-slate-600 rounded-lg';
+        if (bBtn) bBtn.className = 'px-2.5 py-1 text-[10px] font-bold bg-cyan-600 text-white rounded-lg cursor-pointer';
         renderAdminBookings();
-      } else {
-        if (bSec) bSec.classList.add('hidden');
+      } else if (sub === 'rooms') {
         if (rSec) rSec.classList.remove('hidden');
-        if (rBtn) rBtn.className = 'px-2.5 py-1 text-[10px] font-bold bg-cyan-600 text-white rounded-lg';
-        if (bBtn) bBtn.className = 'px-2.5 py-1 text-[10px] font-bold text-slate-600 rounded-lg';
+        if (rBtn) rBtn.className = 'px-2.5 py-1 text-[10px] font-bold bg-cyan-600 text-white rounded-lg cursor-pointer';
         renderAdminRooms();
+      } else if (sub === 'employees') {
+        if (eSec) eSec.classList.remove('hidden');
+        if (eBtn) eBtn.className = 'px-2.5 py-1 text-[10px] font-bold bg-cyan-600 text-white rounded-lg cursor-pointer';
+        renderAdminEmployeesTable();
       }
     }
 
@@ -2713,6 +3624,7 @@
 
       const listHtml = bookings && bookings.length > 0
         ? bookings.map(b => {
+            const isCancelled = (b.status === 'ยกเลิก' || b.status === 'cancelled' || b.status === 'ปฏิเสธ');
             const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
             const style = getRoomBadgeStyle(b.roomName);
             const who = b.bookedBy || b.requester_name || '-';
@@ -2722,6 +3634,30 @@
             const eTime = (b.endTime || '').substring(0, 5);
             const layout = b.seatingLayout || b.room_layout || 'ห้องเรียน (Classroom)';
             const att = b.attendees || b.attendees_count || '-';
+            const bId = b.id || b.bookingId || '';
+            const empBadge = b.empId && b.empId !== '000000' 
+              ? `<span class="bg-cyan-100/70 text-cyan-800 border border-cyan-200 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold mr-1">[${b.empId}]</span>` 
+              : '';
+
+            const statusBadgeHtml = isCancelled
+              ? `<span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500 border border-slate-300 shadow-2xs flex items-center gap-1">
+                   <i class="fa-solid fa-xmark text-slate-400"></i>
+                   <span>ยกเลิกแล้ว</span>
+                 </span>`
+              : `<span class="px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                   isApproved 
+                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs' 
+                     : 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
+                 }">
+                   ${isApproved ? '✓ จองเรียบร้อย' : b.status}
+                 </span>`;
+
+            const cancelBtnHtml = !isCancelled ? `
+              <button type="button" onclick="openSelfCancelModal('${bId}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 hover:border-rose-300 transition shadow-3xs flex items-center gap-1.5 cursor-pointer" title="พนักงานยกเลิกการจองด้วยตนเอง">
+                <i class="fa-regular fa-trash-can text-rose-500"></i>
+                <span>ยกเลิกการจอง</span>
+              </button>
+            ` : '';
 
             return `
               <div class="p-4 bg-white border border-slate-300 border-l-[6px] ${style.bar} rounded-2xl flex justify-between items-center hover:bg-slate-50/80 shadow-2xs transition gap-4 flex-wrap sm:flex-nowrap">
@@ -2741,20 +3677,15 @@
                       <span class="text-slate-900 font-bold">${what}</span>
                     </h4>
                     <p class="text-xs text-slate-500">
-                      <span>ผู้ขอจอง:</span> <strong class="text-slate-800">${who}</strong>
+                      <span>ผู้ขอจอง:</span> ${empBadge}<strong class="text-slate-800">${who}</strong>
                       <span class="mx-1.5 text-slate-300">•</span>
                       <span>หน่วยงาน:</span> <strong class="text-cyan-800">${dept}</strong>
                     </p>
                   </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                  <span class="px-3.5 py-1.5 rounded-full text-xs font-bold ${
-                    isApproved 
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs' 
-                      : 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
-                  }">
-                    ${isApproved ? '✓ จองเรียบร้อย' : b.status}
-                  </span>
+                  ${statusBadgeHtml}
+                  ${cancelBtnHtml}
                 </div>
               </div>
             `;
@@ -2770,6 +3701,7 @@
 
       const mbListHtml = bookings && bookings.length > 0
         ? bookings.map(b => {
+            const isCancelled = (b.status === 'ยกเลิก' || b.status === 'cancelled' || b.status === 'ปฏิเสธ');
             const isApproved = (b.status === 'จองเรียบร้อย' || b.status === 'confirmed' || b.status === 'อนุมัติ');
             const style = getRoomBadgeStyle(b.roomName);
             const who = b.bookedBy || b.requester_name || '-';
@@ -2777,17 +3709,37 @@
             const dept = b.department || '-';
             const sTime = (b.startTime || '').substring(0, 5);
             const eTime = (b.endTime || '').substring(0, 5);
+            const bId = b.id || b.bookingId || '';
+            const empBadge = b.empId && b.empId !== '000000' 
+              ? `<span class="bg-cyan-100/70 text-cyan-800 border border-cyan-200 px-1 py-0.2 rounded text-[9.5px] font-mono font-bold mr-1">[${b.empId}]</span>` 
+              : '';
+
+            const cancelBtnMbHtml = !isCancelled ? `
+              <button type="button" onclick="openSelfCancelModal('${bId}')" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 flex items-center gap-1 cursor-pointer">
+                <i class="fa-regular fa-trash-can text-rose-500 text-[9px]"></i>
+                <span>ยกเลิก</span>
+              </button>
+            ` : '';
 
             return `
               <div class="p-3 bg-white border border-slate-300 border-l-[5px] ${style.bar} rounded-xl space-y-2 text-xs shadow-2xs">
                 <div class="flex justify-between items-center">
                   <span class="font-bold text-white ${style.timeBg} px-2 py-0.5 rounded text-[10px] font-mono">${sTime} - ${eTime} น.</span>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isApproved ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-900'}">${b.status}</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      isCancelled 
+                        ? 'bg-slate-100 text-slate-500 border border-slate-300' 
+                        : (isApproved ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300')
+                    }">
+                      ${isCancelled ? '✕ ยกเลิกแล้ว' : b.status}
+                    </span>
+                    ${cancelBtnMbHtml}
+                  </div>
                 </div>
                 <div class="text-slate-900 font-bold">${b.roomName}</div>
                 <div class="text-[11px] text-slate-600 space-y-0.5">
                   <div>📝 หัวข้อ: <strong class="text-slate-900">${what}</strong></div>
-                  <div>👤 ผู้ขอใช้: <strong class="text-slate-800">${who}</strong> (${dept})</div>
+                  <div>👤 ผู้ขอใช้: ${empBadge}<strong class="text-slate-800">${who}</strong> (${dept})</div>
                 </div>
               </div>
             `;
@@ -3264,17 +4216,12 @@
               <div class="flex items-center gap-3 text-[10.5px]">
                 <span class="flex items-center gap-1.5"><span class="w-3.5 h-2 rounded-full bg-cyan-500 inline-block shadow-2xs"></span> ช่วงที่เลือก</span>
                 <span class="flex items-center gap-1.5 text-red-600"><span class="w-3.5 h-2 rounded-full bg-red-500 inline-block shadow-2xs"></span> ติดจอง</span>
-                <span class="flex items-center gap-1.5 text-amber-700"><span class="w-3.5 h-2 rounded-full bg-amber-400 inline-block shadow-2xs"></span> พักเที่ยง (11-12)</span>
               </div>
             </div>
             
             <div class="relative w-full h-10 flex items-center select-none pt-4 pb-2">
               <!-- Slider Base Track -->
               <div class="slider-track absolute left-0 right-0 h-4 bg-slate-200 border border-slate-300/80 rounded-full shadow-inner"></div>
-              
-              <!-- Lunch Break 11:00 - 12:00 -->
-              <div class="absolute h-4 bg-amber-400/50 border-x-2 border-amber-500/60" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
-              <div class="absolute -top-3.5 text-[8.5px] font-black text-amber-800 bg-amber-100 border border-amber-300 rounded px-1.5 -translate-x-1/2 select-none pointer-events-none shadow-2xs" style="left: 47.92%;">11-12 น. (พักเที่ยง)</div>
               
               <!-- Busy Booked Track -->
               <div class="busy-track absolute left-0 right-0 h-4 rounded-full overflow-hidden pointer-events-none"></div>
@@ -3441,9 +4388,12 @@
         return;
       }
 
+      const formEmpInput = document.getElementById('formEmpId');
+      const formEmpVal = formEmpInput && formEmpInput.value ? formEmpInput.value.trim().padStart(6, '0') : '000000';
       const payload = {
         roomName: roomName,
         items: items,
+        empId: formEmpVal,
         bookedBy: document.getElementById('formBookedBy').value,
         department: document.getElementById('formDepartment').value,
         purpose: document.getElementById('formPurpose').value,
@@ -3460,6 +4410,7 @@
           startTime: it.startTime,
           endTime: it.endTime,
           roomName: payload.roomName,
+          empId: payload.empId || "000000",
           bookedBy: payload.bookedBy,
           department: payload.department,
           purpose: payload.purpose,
@@ -3480,6 +4431,7 @@
               renderCalendar();
               loadScheduleData();
               loadOverviewData();
+        loadEmployees();
 
               document.getElementById('bookingForm').reset();
               document.getElementById('bookingDatesList').innerHTML = '';
@@ -3590,6 +4542,7 @@
         if (admBtn) admBtn.className = 'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition';
         loadScheduleData();
         loadOverviewData();
+        loadEmployees();
       } else if (tab === 'booking') {
         if (calSec) calSec.classList.add('hidden');
         if (bookSec) bookSec.classList.remove('hidden');
@@ -3612,6 +4565,7 @@
         if (bookBtn) bookBtn.className = 'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition';
         if (admBtn) admBtn.className = 'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition';
         loadOverviewData();
+        loadEmployees();
       } else if (tab === 'admin') {
         if (!isAdminAuthenticated) {
           openPasscodeModal();
@@ -3744,14 +4698,11 @@
               <div class="flex items-center gap-2 text-[9px]">
                 <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 rounded-full bg-cyan-500 inline-block shadow-2xs"></span> เลือก</span>
                 <span class="flex items-center gap-1 text-red-600"><span class="w-2.5 h-1.5 rounded-full bg-red-500 inline-block shadow-2xs"></span> ติดจอง</span>
-                <span class="flex items-center gap-1 text-amber-700"><span class="w-2.5 h-1.5 rounded-full bg-amber-400 inline-block shadow-2xs"></span> พักเที่ยง</span>
               </div>
             </div>
             
             <div class="relative w-full h-9 flex items-center select-none pt-3 pb-2">
               <div class="slider-track absolute left-0 right-0 h-3.5 bg-slate-200 border border-slate-300/80 rounded-full shadow-inner"></div>
-              <div class="absolute h-3.5 bg-amber-400/50 border-x border-amber-500/50" style="left: 45.83%; width: 4.17%; pointer-events: none;"></div>
-              <div class="absolute -top-3 text-[7.5px] font-black text-amber-800 bg-amber-100 border border-amber-300 rounded px-1 -translate-x-1/2 select-none pointer-events-none shadow-3xs" style="left: 47.92%;">11-12 น.</div>
               
               <div class="busy-track absolute left-0 right-0 h-3.5 rounded-full overflow-hidden pointer-events-none"></div>
               <div class="active-track absolute h-3.5 bg-gradient-to-r from-cyan-500 to-sky-600 rounded-full shadow-sm pointer-events-none transition-colors"></div>
@@ -3910,9 +4861,12 @@
         return;
       }
 
+      const mbEmpInput = document.getElementById('mbFormEmpId');
+      const mbEmpVal = mbEmpInput && mbEmpInput.value ? mbEmpInput.value.trim().padStart(6, '0') : '000000';
       const payload = {
         roomName: roomName,
         items: items,
+        empId: mbEmpVal,
         bookedBy: document.getElementById('mbFormBookedBy').value,
         department: document.getElementById('mbFormDepartment').value,
         purpose: document.getElementById('mbFormPurpose').value,
@@ -3929,6 +4883,7 @@
           startTime: it.startTime,
           endTime: it.endTime,
           roomName: payload.roomName,
+          empId: payload.empId || "000000",
           bookedBy: payload.bookedBy,
           department: payload.department,
           purpose: payload.purpose,
@@ -3949,6 +4904,7 @@
               renderCalendar();
               loadScheduleData();
               loadOverviewData();
+        loadEmployees();
 
               document.getElementById('mbBookingForm').reset();
               document.getElementById('mbBookingDatesList').innerHTML = '';

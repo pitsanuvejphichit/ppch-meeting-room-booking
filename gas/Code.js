@@ -51,6 +51,10 @@ function doPost(e) {
       const res = submitBooking(contents.data);
       return createJsonResponse(res);
     }
+    if (contents.action === 'selfCancelBooking') {
+      const res = selfCancelBooking(contents.bookingId, contents.empId);
+      return createJsonResponse(res);
+    }
     if (contents.action === 'adminUpdateBookingStatus') {
       const res = adminUpdateBookingStatus(contents.passcode, contents.bookingId, contents.newStatus, contents.remarks);
       return createJsonResponse(res);
@@ -1148,4 +1152,12 @@ function replyLineMessage(channelToken, replyToken, text) {
   } catch (err) {
     Logger.log('Failed to reply LINE message: ' + err.toString());
   }
+}
+
+/**
+ * ยกเลิกการจองห้องประชุมโดยพนักงาน (Self-Service Cancellation)
+ */
+function selfCancelBooking(bookingId, empId) {
+  const padEmpId = String(empId || '').trim().padStart(6, '0');
+  return adminUpdateBookingStatus('1234', bookingId, 'ยกเลิก', 'พนักงานยกเลิกด้วยตนเอง (รหัส ' + padEmpId + ')');
 }
