@@ -419,10 +419,7 @@
                 </div>
               </div>
               
-              <div class="pt-2">
-                <label class="block text-xs font-bold text-slate-700 mb-1">หน่วยงาน / แผนก <span class="text-red-500">*</span></label>
-                <input type="text" id="formDepartment" required placeholder="ระบุหน่วยงานหรือเลือกจากชื่อพนักงานด้านบน" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
-              </div>
+              <input type="hidden" id="formDepartment" value="">
 
               <div class="pt-2">
                 <label class="block text-xs font-bold text-slate-700 mb-1">หัวข้อการประชุม <span class="text-red-500">*</span></label>
@@ -490,101 +487,189 @@
               </div>
             </div>
 
-            <!-- ส่วนที่ 5 รูปแบบการจัดประชุม (DIAGRAM MATCHING ORIGINAL IMAGE EXACTLY) -->
+            <!-- ส่วนที่ 5 รูปแบบการจัดประชุม (Modern Seating Layout Interactive Cards) -->
             <div class="form-light-card overflow-hidden">
-              <div class="form-header-banner">ส่วนที่ 5 รูปแบบการจัดประชุม</div>
-              <div class="p-4 space-y-4">
-                <label class="block text-xs font-bold text-slate-700">กรุณาเลือกรูปแบบการจัดห้องประชุม <span class="text-red-500">*</span></label>
+              <div class="form-header-banner flex items-center justify-between">
+                <span>ส่วนที่ 5 รูปแบบการจัดประชุม</span>
+                <span class="text-[11px] font-normal text-cyan-100 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/20">เลือกรูปแบบที่ต้องการ</span>
+              </div>
+              <div class="p-4 sm:p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                  <label class="block text-xs font-bold text-slate-700">กรุณาเลือกรูปแบบการจัดห้องประชุม <span class="text-red-500">*</span></label>
+                  <span class="text-[11px] text-slate-500 font-medium">คลิกที่การ์ดเพื่อเลือก</span>
+                </div>
                 
-                <div class="grid grid-cols-2 gap-4 text-xs font-bold">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                   
-                  <!-- 1. CLASSROOM -->
-                  <div class="space-y-2">
-                    <div class="border border-slate-300 rounded-xl p-2 bg-white shadow-2xs hover:border-cyan-400 transition">
-                      <svg viewBox="0 0 160 140" class="w-full h-28 mx-auto" fill="none">
-                        <rect x="15" y="10" width="130" height="120" rx="2" stroke="#1e293b" stroke-width="1.5" fill="#fff"/>
-                        <text x="80" y="24" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10" fill="#1e293b">CLASSROOM</text>
-                        <rect x="55" y="28" width="50" height="6" rx="1" stroke="#1e293b" stroke-width="1.5" fill="#e2e8f0"/>
-                        <rect x="73" y="112" width="14" height="10" stroke="#1e293b" stroke-width="1.5" fill="#1e293b"/>
-                        <rect x="25" y="40" width="45" height="10" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 30 54 A 4 4 0 0 0 38 54 Z M 48 54 A 4 4 0 0 0 56 54 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <rect x="25" y="62" width="45" height="10" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 30 76 A 4 4 0 0 0 38 76 Z M 48 76 A 4 4 0 0 0 56 76 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <rect x="25" y="84" width="45" height="10" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 30 98 A 4 4 0 0 0 38 98 Z M 48 98 A 4 4 0 0 0 56 98 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <rect x="90" y="40" width="45" height="10" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 95 54 A 4 4 0 0 0 103 54 Z M 113 54 A 4 4 0 0 0 121 54 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <rect x="90" y="62" width="45" height="10" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 95 76 A 4 4 0 0 0 103 76 Z M 113 76 A 4 4 0 0 0 121 76 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <rect x="90" y="84" width="45" height="10" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 95 98 A 4 4 0 0 0 103 98 Z M 113 98 A 4 4 0 0 0 121 98 Z" stroke="#1e293b" stroke-width="1.2"/>
-                      </svg>
+                  <!-- 1. CLASSROOM (นักเรียน) -->
+                  <label class="seating-card group relative block cursor-pointer rounded-2xl border-2 border-cyan-600 bg-cyan-50/60 p-3.5 transition-all duration-200 shadow-sm is-active" onclick="selectSeatingLayout(this)">
+                    <input type="radio" name="seatingLayout" value="นักเรียน" checked class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                          <i class="fa-solid fa-chalkboard-user"></i>
+                        </span>
+                        <div>
+                          <div class="font-bold text-slate-800 text-sm group-hover:text-cyan-700 transition">แบบห้องเรียน</div>
+                          <div class="text-[10px] text-slate-500 font-mono">Classroom</div>
+                        </div>
+                      </div>
+                      <span class="seating-indicator w-5 h-5 rounded-full border-2 border-cyan-600 bg-cyan-600 text-white flex items-center justify-center text-[10px] shadow-xs">
+                        <i class="fa-solid fa-check"></i>
+                      </span>
                     </div>
-                    <label class="flex items-center space-x-2 text-slate-800 cursor-pointer pt-0.5">
-                      <input type="radio" name="seatingLayout" value="นักเรียน" checked class="w-4 h-4 text-cyan-600 focus:ring-cyan-500">
-                      <span class="text-xs font-semibold">นักเรียน</span>
-                    </label>
-                  </div>
+                    
+                    <!-- Vector Room Graphic -->
+                    <div class="my-2.5 bg-white/90 rounded-xl p-2 border border-slate-200/80 group-hover:border-cyan-200 transition">
+                      <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="65" y="12" width="70" height="7" rx="3" fill="#0284c7" stroke="#0369a1" stroke-width="1"/>
+  <rect x="94" y="22" width="12" height="7" rx="1.5" fill="#475569"/>
+  <!-- Row 1 -->
+  <rect x="25" y="36" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="42" cy="56" r="4" fill="#0284c7"/><circle cx="72" cy="56" r="4" fill="#0284c7"/>
+  <!-- Row 2 -->
+  <rect x="25" y="66" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="42" cy="86" r="4" fill="#0284c7"/><circle cx="72" cy="86" r="4" fill="#0284c7"/>
+  <!-- Row 3 -->
+  <rect x="25" y="96" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="42" cy="116" r="4" fill="#0284c7"/><circle cx="72" cy="116" r="4" fill="#0284c7"/>
+  <!-- Column 2 Row 1 -->
+  <rect x="110" y="36" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="127" cy="56" r="4" fill="#0284c7"/><circle cx="157" cy="56" r="4" fill="#0284c7"/>
+  <!-- Column 2 Row 2 -->
+  <rect x="110" y="66" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="127" cy="86" r="4" fill="#0284c7"/><circle cx="157" cy="86" r="4" fill="#0284c7"/>
+  <!-- Column 2 Row 3 -->
+  <rect x="110" y="96" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="127" cy="116" r="4" fill="#0284c7"/><circle cx="157" cy="116" r="4" fill="#0284c7"/>
+</svg>
+                    </div>
 
-                  <!-- 2. CONFERENCE -->
-                  <div class="space-y-2">
-                    <div class="border border-slate-300 rounded-xl p-2 bg-white shadow-2xs hover:border-cyan-400 transition">
-                      <svg viewBox="0 0 160 140" class="w-full h-28 mx-auto" fill="none">
-                        <rect x="15" y="10" width="130" height="120" rx="2" stroke="#1e293b" stroke-width="1.5" fill="#fff"/>
-                        <text x="80" y="24" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10" fill="#1e293b">CONFERENCE</text>
-                        <rect x="65" y="36" width="30" height="68" rx="2" stroke="#1e293b" stroke-width="1.5"/>
-                        <line x1="65" y1="70" x2="95" y2="70" stroke="#1e293b" stroke-width="1"/>
-                        <path d="M 57 42 A 4 4 0 0 1 57 50 Z M 57 56 A 4 4 0 0 1 57 64 Z M 57 70 A 4 4 0 0 1 57 78 Z M 57 84 A 4 4 0 0 1 57 92 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 103 42 A 4 4 0 0 0 103 50 Z M 103 56 A 4 4 0 0 0 103 64 Z M 103 70 A 4 4 0 0 0 103 78 Z M 103 84 A 4 4 0 0 0 103 92 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 72 30 A 4 4 0 0 1 80 30 Z M 80 110 A 4 4 0 0 1 72 110 Z" stroke="#1e293b" stroke-width="1.2"/>
-                      </svg>
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                      <span class="text-slate-500"><i class="fa-solid fa-user-group text-slate-400 mr-1"></i>เหมาะสำหรับ:</span>
+                      <span class="font-semibold text-slate-700 bg-white/80 px-2 py-0.5 rounded-md border border-slate-200">อบรม / สัมมนา / มีโต๊ะเขียน</span>
                     </div>
-                    <label class="flex items-center space-x-2 text-slate-800 cursor-pointer pt-0.5">
-                      <input type="radio" name="seatingLayout" value="โต๊ะกลม" class="w-4 h-4 text-cyan-600 focus:ring-cyan-500">
-                      <span class="text-xs font-semibold">โต๊ะกลม</span>
-                    </label>
-                  </div>
+                  </label>
 
-                  <!-- 3. U-SHAPE -->
-                  <div class="space-y-2">
-                    <div class="border border-slate-300 rounded-xl p-2 bg-white shadow-2xs hover:border-cyan-400 transition">
-                      <svg viewBox="0 0 160 140" class="w-full h-28 mx-auto" fill="none">
-                        <rect x="15" y="10" width="130" height="120" rx="2" stroke="#1e293b" stroke-width="1.5" fill="#fff"/>
-                        <text x="80" y="24" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10" fill="#1e293b">U-SHAPE</text>
-                        <rect x="68" y="28" width="24" height="6" rx="1" stroke="#1e293b" stroke-width="1.2" fill="#e2e8f0"/>
-                        <rect x="42" y="42" width="16" height="56" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <rect x="102" y="42" width="16" height="56" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <rect x="42" y="98" width="76" height="14" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 36 48 A 4 4 0 0 1 36 56 Z M 36 62 A 4 4 0 0 1 36 70 Z M 36 76 A 4 4 0 0 1 36 84 Z M 36 90 A 4 4 0 0 1 36 98 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 124 48 A 4 4 0 0 0 124 56 Z M 124 62 A 4 4 0 0 0 124 70 Z M 124 76 A 4 4 0 0 0 124 84 Z M 124 90 A 4 4 0 0 0 124 98 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 50 118 A 4 4 0 0 0 58 118 Z M 66 118 A 4 4 0 0 0 74 118 Z M 82 118 A 4 4 0 0 0 90 118 Z M 98 118 A 4 4 0 0 0 106 118 Z" stroke="#1e293b" stroke-width="1.2"/>
-                      </svg>
+                  <!-- 2. CONFERENCE (โต๊ะกลม / โต๊ะประชุม) -->
+                  <label class="seating-card group relative block cursor-pointer rounded-2xl border-2 border-slate-200 bg-white p-3.5 transition-all duration-200 hover:border-cyan-300 hover:shadow-sm" onclick="selectSeatingLayout(this)">
+                    <input type="radio" name="seatingLayout" value="โต๊ะกลม" class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                          <i class="fa-solid fa-users-rectangle"></i>
+                        </span>
+                        <div>
+                          <div class="font-bold text-slate-800 text-sm group-hover:text-cyan-700 transition">แบบโต๊ะประชุม</div>
+                          <div class="text-[10px] text-slate-500 font-mono">Conference / Boardroom</div>
+                        </div>
+                      </div>
+                      <span class="seating-indicator w-5 h-5 rounded-full border-2 border-slate-300 bg-white text-transparent flex items-center justify-center text-[10px] shadow-xs">
+                        <i class="fa-solid fa-check"></i>
+                      </span>
                     </div>
-                    <label class="flex items-center space-x-2 text-slate-800 cursor-pointer pt-0.5">
-                      <input type="radio" name="seatingLayout" value="ตัวยู" class="w-4 h-4 text-cyan-600 focus:ring-cyan-500">
-                      <span class="text-xs font-semibold">ตัวยู</span>
-                    </label>
-                  </div>
+                    
+                    <!-- Vector Room Graphic -->
+                    <div class="my-2.5 bg-white/90 rounded-xl p-2 border border-slate-200/80 group-hover:border-indigo-200 transition">
+                      <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="75" y="12" width="50" height="6" rx="2.5" fill="#64748b" stroke="#475569" stroke-width="1"/>
+  <rect x="65" y="32" width="70" height="68" rx="14" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+  <rect x="88" y="44" width="24" height="44" rx="4" fill="#c7d2fe"/>
+  <!-- Chairs Left -->
+  <circle cx="53" cy="44" r="4.5" fill="#4f46e5"/><circle cx="53" cy="66" r="4.5" fill="#4f46e5"/><circle cx="53" cy="88" r="4.5" fill="#4f46e5"/>
+  <!-- Chairs Right -->
+  <circle cx="147" cy="44" r="4.5" fill="#4f46e5"/><circle cx="147" cy="66" r="4.5" fill="#4f46e5"/><circle cx="147" cy="88" r="4.5" fill="#4f46e5"/>
+  <!-- Chairs Top & Bottom -->
+  <circle cx="100" cy="22" r="4.5" fill="#4f46e5"/><circle cx="100" cy="110" r="4.5" fill="#4f46e5"/>
+</svg>
+                    </div>
 
-                  <!-- 4. THEATRE -->
-                  <div class="space-y-2">
-                    <div class="border border-slate-300 rounded-xl p-2 bg-white shadow-2xs hover:border-cyan-400 transition">
-                      <svg viewBox="0 0 160 140" class="w-full h-28 mx-auto" fill="none">
-                        <rect x="15" y="10" width="130" height="120" rx="2" stroke="#1e293b" stroke-width="1.5" fill="#fff"/>
-                        <text x="80" y="24" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="10" fill="#1e293b">THEATRE</text>
-                        <rect x="55" y="32" width="50" height="10" rx="1" stroke="#1e293b" stroke-width="1.5"/>
-                        <path d="M 74 46 A 4 4 0 0 0 86 46 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 38 58 A 4 4 0 0 0 46 58 Z M 58 58 A 4 4 0 0 0 66 58 Z M 94 58 A 4 4 0 0 0 102 58 Z M 114 58 A 4 4 0 0 0 122 58 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 38 72 A 4 4 0 0 0 46 72 Z M 58 72 A 4 4 0 0 0 66 72 Z M 94 72 A 4 4 0 0 0 102 72 Z M 114 72 A 4 4 0 0 0 122 72 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 38 86 A 4 4 0 0 0 46 86 Z M 58 86 A 4 4 0 0 0 66 86 Z M 94 86 A 4 4 0 0 0 102 86 Z M 114 86 A 4 4 0 0 0 122 86 Z" stroke="#1e293b" stroke-width="1.2"/>
-                        <path d="M 38 100 A 4 4 0 0 0 46 100 Z M 58 100 A 4 4 0 0 0 66 100 Z M 94 100 A 4 4 0 0 0 102 100 Z M 114 100 A 4 4 0 0 0 122 100 Z" stroke="#1e293b" stroke-width="1.2"/>
-                      </svg>
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                      <span class="text-slate-500"><i class="fa-solid fa-comments text-slate-400 mr-1"></i>เหมาะสำหรับ:</span>
+                      <span class="font-semibold text-slate-700 bg-white/80 px-2 py-0.5 rounded-md border border-slate-200">ประชุมผู้บริหาร / หารือกลุ่ม</span>
                     </div>
-                    <label class="flex items-center space-x-2 text-slate-800 cursor-pointer pt-0.5">
-                      <input type="radio" name="seatingLayout" value="เก้าอี้" class="w-4 h-4 text-cyan-600 focus:ring-cyan-500">
-                      <span class="text-xs font-semibold">เก้าอี้</span>
-                    </label>
-                  </div>
+                  </label>
+
+                  <!-- 3. U-SHAPE (ตัวยู) -->
+                  <label class="seating-card group relative block cursor-pointer rounded-2xl border-2 border-slate-200 bg-white p-3.5 transition-all duration-200 hover:border-cyan-300 hover:shadow-sm" onclick="selectSeatingLayout(this)">
+                    <input type="radio" name="seatingLayout" value="ตัวยู" class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                          <i class="fa-solid fa-magnet"></i>
+                        </span>
+                        <div>
+                          <div class="font-bold text-slate-800 text-sm group-hover:text-cyan-700 transition">แบบตัวยู</div>
+                          <div class="text-[10px] text-slate-500 font-mono">U-Shape</div>
+                        </div>
+                      </div>
+                      <span class="seating-indicator w-5 h-5 rounded-full border-2 border-slate-300 bg-white text-transparent flex items-center justify-center text-[10px] shadow-xs">
+                        <i class="fa-solid fa-check"></i>
+                      </span>
+                    </div>
+                    
+                    <!-- Vector Room Graphic -->
+                    <div class="my-2.5 bg-white/90 rounded-xl p-2 border border-slate-200/80 group-hover:border-teal-200 transition">
+                      <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="70" y="12" width="60" height="6" rx="2.5" fill="#0d9488" stroke="#0f766e" stroke-width="1"/>
+  <rect x="94" y="23" width="12" height="7" rx="1.5" fill="#64748b"/>
+  <!-- U-Table -->
+  <rect x="42" y="38" width="22" height="60" rx="3" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <rect x="136" y="38" width="22" height="60" rx="3" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <rect x="42" y="84" width="116" height="20" rx="3" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <!-- Chairs -->
+  <circle cx="30" cy="46" r="4" fill="#0d9488"/><circle cx="30" cy="62" r="4" fill="#0d9488"/><circle cx="30" cy="78" r="4" fill="#0d9488"/>
+  <circle cx="170" cy="46" r="4" fill="#0d9488"/><circle cx="170" cy="62" r="4" fill="#0d9488"/><circle cx="170" cy="78" r="4" fill="#0d9488"/>
+  <circle cx="68" cy="114" r="4" fill="#0d9488"/><circle cx="100" cy="114" r="4" fill="#0d9488"/><circle cx="132" cy="114" r="4" fill="#0d9488"/>
+</svg>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                      <span class="text-slate-500"><i class="fa-solid fa-chalkboard text-slate-400 mr-1"></i>เหมาะสำหรับ:</span>
+                      <span class="font-semibold text-slate-700 bg-white/80 px-2 py-0.5 rounded-md border border-slate-200">อภิปราย / สื่อสารสองทาง</span>
+                    </div>
+                  </label>
+
+                  <!-- 4. THEATRE (เก้าอี้ / เธียเตอร์) -->
+                  <label class="seating-card group relative block cursor-pointer rounded-2xl border-2 border-slate-200 bg-white p-3.5 transition-all duration-200 hover:border-cyan-300 hover:shadow-sm" onclick="selectSeatingLayout(this)">
+                    <input type="radio" name="seatingLayout" value="เก้าอี้" class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                          <i class="fa-solid fa-chair"></i>
+                        </span>
+                        <div>
+                          <div class="font-bold text-slate-800 text-sm group-hover:text-cyan-700 transition">แบบเธียเตอร์</div>
+                          <div class="text-[10px] text-slate-500 font-mono">Theatre (เก้าอี้ล้วน)</div>
+                        </div>
+                      </div>
+                      <span class="seating-indicator w-5 h-5 rounded-full border-2 border-slate-300 bg-white text-transparent flex items-center justify-center text-[10px] shadow-xs">
+                        <i class="fa-solid fa-check"></i>
+                      </span>
+                    </div>
+                    
+                    <!-- Vector Room Graphic -->
+                    <div class="my-2.5 bg-white/90 rounded-xl p-2 border border-slate-200/80 group-hover:border-rose-200 transition">
+                      <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="55" y="12" width="90" height="9" rx="3" fill="#e11d48" stroke="#be123c" stroke-width="1"/>
+  <!-- Rows of Chairs -->
+  <circle cx="35" cy="34" r="3.5" fill="#f43f5e"/><circle cx="55" cy="34" r="3.5" fill="#f43f5e"/><circle cx="75" cy="34" r="3.5" fill="#f43f5e"/><circle cx="125" cy="34" r="3.5" fill="#f43f5e"/><circle cx="145" cy="34" r="3.5" fill="#f43f5e"/><circle cx="165" cy="34" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="54" r="3.5" fill="#f43f5e"/><circle cx="55" cy="54" r="3.5" fill="#f43f5e"/><circle cx="75" cy="54" r="3.5" fill="#f43f5e"/><circle cx="125" cy="54" r="3.5" fill="#f43f5e"/><circle cx="145" cy="54" r="3.5" fill="#f43f5e"/><circle cx="165" cy="54" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="74" r="3.5" fill="#f43f5e"/><circle cx="55" cy="74" r="3.5" fill="#f43f5e"/><circle cx="75" cy="74" r="3.5" fill="#f43f5e"/><circle cx="125" cy="74" r="3.5" fill="#f43f5e"/><circle cx="145" cy="74" r="3.5" fill="#f43f5e"/><circle cx="165" cy="74" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="94" r="3.5" fill="#f43f5e"/><circle cx="55" cy="94" r="3.5" fill="#f43f5e"/><circle cx="75" cy="94" r="3.5" fill="#f43f5e"/><circle cx="125" cy="94" r="3.5" fill="#f43f5e"/><circle cx="145" cy="94" r="3.5" fill="#f43f5e"/><circle cx="165" cy="94" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="114" r="3.5" fill="#f43f5e"/><circle cx="55" cy="114" r="3.5" fill="#f43f5e"/><circle cx="75" cy="114" r="3.5" fill="#f43f5e"/><circle cx="125" cy="114" r="3.5" fill="#f43f5e"/><circle cx="145" cy="114" r="3.5" fill="#f43f5e"/><circle cx="165" cy="114" r="3.5" fill="#f43f5e"/>
+</svg>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                      <span class="text-slate-500"><i class="fa-solid fa-person-chalkboard text-slate-400 mr-1"></i>เหมาะสำหรับ:</span>
+                      <span class="font-semibold text-slate-700 bg-white/80 px-2 py-0.5 rounded-md border border-slate-200">บรรยาย / จุคนได้มากที่สุด</span>
+                    </div>
+                  </label>
 
                 </div>
               </div>
@@ -634,6 +719,10 @@
             <button type="button" onclick="switchAdminSubTab('rooms')" id="adminSubTabRoomsBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">ข้อมูลห้องประชุม (5 ห้อง)</button>
             <button type="button" onclick="switchAdminSubTab('overview')" id="adminSubTabOverviewBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">รายงานภาพรวม (Overview)</button>
                       <button type="button" onclick="switchAdminSubTab('employees')" id="adminSubTabEmployeesBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">จัดการข้อมูลพนักงาน (Employees)</button>
+            <button type="button" onclick="switchAdminSubTab('line')" id="adminSubTabLineBtn" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-emerald-700 transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-brands fa-line text-emerald-500 text-sm"></i>
+              <span>แจ้งเตือน LINE</span>
+            </button>
           </div>
         </div>
 
@@ -840,6 +929,105 @@
             </div>
           </div>
         </div>
+
+        <!-- 5. LINE NOTIFICATION SETTINGS SUB-SECTION -->
+        <div id="adminLineSubSection" class="hidden space-y-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-5 py-4 text-white flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white text-2xl">
+                  <i class="fa-brands fa-line"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-base">การเชื่อมต่อ LINE Messaging API</h3>
+                  <p class="text-xs text-emerald-100">ระบบแจ้งเตือนการจองและยกเลิกห้องประชุมแบบ Real-time</p>
+                </div>
+              </div>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/30 text-white border border-white/20">
+                <span class="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                <span>ระบบพร้อมใช้งาน</span>
+              </span>
+            </div>
+
+            <div class="p-5 space-y-5">
+              <!-- Webhook URL Box -->
+              <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-link text-emerald-600"></i>
+                    <span>Webhook URL (สำหรับใส่ใน LINE Developers Console):</span>
+                  </span>
+                  <button type="button" onclick="copyLineWebhookUrl()" class="px-3 py-1 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-100 active:scale-95 transition flex items-center gap-1 shadow-3xs cursor-pointer">
+                    <i class="fa-regular fa-copy text-slate-500"></i>
+                    <span id="copyWebhookBtnText">คัดลอก URL</span>
+                  </button>
+                </div>
+                <div class="font-mono text-xs text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200 break-all select-all font-semibold">
+                  https://script.google.com/macros/s/AKfycbxGmA9Cl_rco-I7xHm_K1leef44nZbrDDNddxJaE-FQrakME21e5QZ3xB282r4hpC9m/exec
+                </div>
+                <p class="text-[11px] text-slate-500">
+                  <i class="fa-solid fa-circle-info text-cyan-600 mr-1"></i>
+                  นำ Webhook URL นี้ไปใส่ใน LINE Developers Console > Messaging API และเปิดใช้งานสวิตช์ <strong>Use Webhook</strong>
+                </p>
+              </div>
+
+              <!-- Configuration Cards Grid -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Target Group ID Card -->
+                <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <i class="fa-solid fa-users text-indigo-600"></i>
+                      <span>Target Group / User ID (กลุ่มเป้าหมาย):</span>
+                    </span>
+                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">บันทึกแล้ว</span>
+                  </div>
+                  <div class="font-mono text-xs text-indigo-900 bg-indigo-50/60 p-2.5 rounded-lg border border-indigo-200 font-bold select-all">
+                    C365dfc5013c8e61b7988f714ac0c128f
+                  </div>
+                  <p class="text-[11px] text-slate-500 leading-relaxed">
+                    💡 <strong>วิธีดึง Group ID ใหม่:</strong> เชิญ LINE Bot เข้ากลุ่ม แล้วพิมพ์ <code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-600 font-bold">/id</code> ในกลุ่ม บอทจะตอบกลับรหัสกลุ่มทันที
+                  </p>
+                </div>
+
+                <!-- Channel Access Token Card -->
+                <div class="border border-slate-200 rounded-xl p-4 bg-white space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <i class="fa-solid fa-key text-amber-600"></i>
+                      <span>Channel Access Token:</span>
+                    </span>
+                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Long-lived Active</span>
+                  </div>
+                  <div class="font-mono text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                    •••••••••••••••••••••••••••••••••••••••••••••••••• (ตั้งค่าในแผ่นงาน Settings เรียบร้อยแล้ว)
+                  </div>
+                  <p class="text-[11px] text-slate-500 leading-relaxed">
+                    🔒 ปลอดภัยสูงสุด: โทเค็นถูกจัดเก็บในเซิร์ฟเวอร์ Google Apps Script ไม่แสดงบนฝั่งผู้ใช้ทั่วไป
+                  </p>
+                </div>
+
+              </div>
+
+              <!-- Action & Test Push Button -->
+              <div class="border-t border-slate-200 pt-4 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h4 class="text-xs font-bold text-slate-800">ทดสอบการส่งข้อความเข้า LINE กลุ่ม</h4>
+                  <p class="text-[11px] text-slate-500">กดปุ่มเพื่อส่งการ์ด Flex Message ทดสอบไปยังกลุ่มไลน์ผู้ดูแลระบบทันที</p>
+                </div>
+                <button type="button" id="btnTestLinePush" onclick="triggerTestLineNotification()" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-sm transition active:scale-95 flex items-center gap-2 cursor-pointer">
+                  <i class="fa-solid fa-paper-plane"></i>
+                  <span>ส่งข้อความทดสอบ (Test Push)</span>
+                </button>
+              </div>
+
+              <!-- Live Test Result Output Box -->
+              <div id="lineTestResultBox" class="hidden p-3.5 rounded-xl border text-xs font-medium"></div>
+
+            </div>
+          </div>
+        </div>
       </div>
 
 
@@ -990,10 +1178,7 @@
               <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">✓ ตรวจสอบแล้ว</span>
             </div>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">หน่วยงาน / แผนก <span class="text-red-500">*</span></label>
-            <input type="text" id="mbFormDepartment" required placeholder="หน่วยงาน" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
-          </div>
+          <input type="hidden" id="mbFormDepartment" value="">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">หัวข้อการประชุม <span class="text-red-500">*</span></label>
             <input type="text" id="mbFormPurpose" required placeholder="หัวข้อการประชุม" class="w-full px-3 py-2 border-b border-slate-300 focus:border-cyan-600 text-sm focus:outline-none bg-transparent text-slate-900">
@@ -1019,13 +1204,117 @@
             <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="mbEquipOpt" value="น้ำดื่มขวด" class="w-4 h-4 text-cyan-600 rounded border-slate-300"><span>น้ำดื่ม</span></label>
           </div>
         </div>
-        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2">
-          <label class="block text-xs font-bold text-slate-700">รูปแบบจัดห้อง</label>
-          <div class="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-800 pt-1">
-            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="mbSeatingLayout" value="นักเรียน" checked class="w-4 h-4 text-cyan-600"><span>นักเรียน</span></label>
-            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="mbSeatingLayout" value="โต๊ะกลม" class="w-4 h-4 text-cyan-600"><span>โต๊ะกลม</span></label>
-            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="mbSeatingLayout" value="ตัวยู" class="w-4 h-4 text-cyan-600"><span>ตัวยู</span></label>
-            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="mbSeatingLayout" value="เก้าอี้" class="w-4 h-4 text-cyan-600"><span>เก้าอี้</span></label>
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-slate-800">รูปแบบการจัดห้องประชุม <span class="text-red-500">*</span></label>
+            <span class="text-[10px] text-slate-500">แตะเพื่อเลือก</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <!-- 1. นักเรียน -->
+            <label class="seating-card group relative block cursor-pointer rounded-xl border-2 border-cyan-600 bg-cyan-50/60 p-2.5 transition is-active" onclick="selectSeatingLayout(this)">
+              <input type="radio" name="mbSeatingLayout" value="นักเรียน" checked class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-slate-800 text-[11px]">แบบห้องเรียน</span>
+                <span class="seating-indicator w-4 h-4 rounded-full border border-cyan-600 bg-cyan-600 text-white flex items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
+              </div>
+              <div class="bg-white/80 rounded-lg p-1 border border-slate-200/80 my-1">
+                <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="65" y="12" width="70" height="7" rx="3" fill="#0284c7" stroke="#0369a1" stroke-width="1"/>
+  <rect x="94" y="22" width="12" height="7" rx="1.5" fill="#475569"/>
+  <!-- Row 1 -->
+  <rect x="25" y="36" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="42" cy="56" r="4" fill="#0284c7"/><circle cx="72" cy="56" r="4" fill="#0284c7"/>
+  <!-- Row 2 -->
+  <rect x="25" y="66" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="42" cy="86" r="4" fill="#0284c7"/><circle cx="72" cy="86" r="4" fill="#0284c7"/>
+  <!-- Row 3 -->
+  <rect x="25" y="96" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="42" cy="116" r="4" fill="#0284c7"/><circle cx="72" cy="116" r="4" fill="#0284c7"/>
+  <!-- Column 2 Row 1 -->
+  <rect x="110" y="36" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="127" cy="56" r="4" fill="#0284c7"/><circle cx="157" cy="56" r="4" fill="#0284c7"/>
+  <!-- Column 2 Row 2 -->
+  <rect x="110" y="66" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="127" cy="86" r="4" fill="#0284c7"/><circle cx="157" cy="86" r="4" fill="#0284c7"/>
+  <!-- Column 2 Row 3 -->
+  <rect x="110" y="96" width="65" height="14" rx="2" fill="#e0f2fe" stroke="#38bdf8" stroke-width="1.2"/>
+  <circle cx="127" cy="116" r="4" fill="#0284c7"/><circle cx="157" cy="116" r="4" fill="#0284c7"/>
+</svg>
+              </div>
+              <div class="text-[9px] text-slate-500 truncate">อบรม / มีโต๊ะเขียน</div>
+            </label>
+
+            <!-- 2. โต๊ะกลม -->
+            <label class="seating-card group relative block cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2.5 transition hover:border-cyan-300" onclick="selectSeatingLayout(this)">
+              <input type="radio" name="mbSeatingLayout" value="โต๊ะกลม" class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-slate-800 text-[11px]">แบบโต๊ะประชุม</span>
+                <span class="seating-indicator w-4 h-4 rounded-full border border-slate-300 bg-white text-transparent flex items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
+              </div>
+              <div class="bg-white/80 rounded-lg p-1 border border-slate-200/80 my-1">
+                <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="75" y="12" width="50" height="6" rx="2.5" fill="#64748b" stroke="#475569" stroke-width="1"/>
+  <rect x="65" y="32" width="70" height="68" rx="14" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+  <rect x="88" y="44" width="24" height="44" rx="4" fill="#c7d2fe"/>
+  <!-- Chairs Left -->
+  <circle cx="53" cy="44" r="4.5" fill="#4f46e5"/><circle cx="53" cy="66" r="4.5" fill="#4f46e5"/><circle cx="53" cy="88" r="4.5" fill="#4f46e5"/>
+  <!-- Chairs Right -->
+  <circle cx="147" cy="44" r="4.5" fill="#4f46e5"/><circle cx="147" cy="66" r="4.5" fill="#4f46e5"/><circle cx="147" cy="88" r="4.5" fill="#4f46e5"/>
+  <!-- Chairs Top & Bottom -->
+  <circle cx="100" cy="22" r="4.5" fill="#4f46e5"/><circle cx="100" cy="110" r="4.5" fill="#4f46e5"/>
+</svg>
+              </div>
+              <div class="text-[9px] text-slate-500 truncate">หารือผู้บริหาร / กลุ่ม</div>
+            </label>
+
+            <!-- 3. ตัวยู -->
+            <label class="seating-card group relative block cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2.5 transition hover:border-cyan-300" onclick="selectSeatingLayout(this)">
+              <input type="radio" name="mbSeatingLayout" value="ตัวยู" class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-slate-800 text-[11px]">แบบตัวยู</span>
+                <span class="seating-indicator w-4 h-4 rounded-full border border-slate-300 bg-white text-transparent flex items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
+              </div>
+              <div class="bg-white/80 rounded-lg p-1 border border-slate-200/80 my-1">
+                <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="70" y="12" width="60" height="6" rx="2.5" fill="#0d9488" stroke="#0f766e" stroke-width="1"/>
+  <rect x="94" y="23" width="12" height="7" rx="1.5" fill="#64748b"/>
+  <!-- U-Table -->
+  <rect x="42" y="38" width="22" height="60" rx="3" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <rect x="136" y="38" width="22" height="60" rx="3" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <rect x="42" y="84" width="116" height="20" rx="3" fill="#ccfbf1" stroke="#14b8a6" stroke-width="1.5"/>
+  <!-- Chairs -->
+  <circle cx="30" cy="46" r="4" fill="#0d9488"/><circle cx="30" cy="62" r="4" fill="#0d9488"/><circle cx="30" cy="78" r="4" fill="#0d9488"/>
+  <circle cx="170" cy="46" r="4" fill="#0d9488"/><circle cx="170" cy="62" r="4" fill="#0d9488"/><circle cx="170" cy="78" r="4" fill="#0d9488"/>
+  <circle cx="68" cy="114" r="4" fill="#0d9488"/><circle cx="100" cy="114" r="4" fill="#0d9488"/><circle cx="132" cy="114" r="4" fill="#0d9488"/>
+</svg>
+              </div>
+              <div class="text-[9px] text-slate-500 truncate">อภิปราย / มีจอหัวโต๊ะ</div>
+            </label>
+
+            <!-- 4. เก้าอี้ -->
+            <label class="seating-card group relative block cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2.5 transition hover:border-cyan-300" onclick="selectSeatingLayout(this)">
+              <input type="radio" name="mbSeatingLayout" value="เก้าอี้" class="sr-only seating-radio" onchange="updateSeatingCardsActive()">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-bold text-slate-800 text-[11px]">แบบเธียเตอร์</span>
+                <span class="seating-indicator w-4 h-4 rounded-full border border-slate-300 bg-white text-transparent flex items-center justify-center text-[8px]"><i class="fa-solid fa-check"></i></span>
+              </div>
+              <div class="bg-white/80 rounded-lg p-1 border border-slate-200/80 my-1">
+                <svg viewBox="0 0 200 130" class="w-full h-24 sm:h-28 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="6" width="184" height="118" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="55" y="12" width="90" height="9" rx="3" fill="#e11d48" stroke="#be123c" stroke-width="1"/>
+  <!-- Rows of Chairs -->
+  <circle cx="35" cy="34" r="3.5" fill="#f43f5e"/><circle cx="55" cy="34" r="3.5" fill="#f43f5e"/><circle cx="75" cy="34" r="3.5" fill="#f43f5e"/><circle cx="125" cy="34" r="3.5" fill="#f43f5e"/><circle cx="145" cy="34" r="3.5" fill="#f43f5e"/><circle cx="165" cy="34" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="54" r="3.5" fill="#f43f5e"/><circle cx="55" cy="54" r="3.5" fill="#f43f5e"/><circle cx="75" cy="54" r="3.5" fill="#f43f5e"/><circle cx="125" cy="54" r="3.5" fill="#f43f5e"/><circle cx="145" cy="54" r="3.5" fill="#f43f5e"/><circle cx="165" cy="54" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="74" r="3.5" fill="#f43f5e"/><circle cx="55" cy="74" r="3.5" fill="#f43f5e"/><circle cx="75" cy="74" r="3.5" fill="#f43f5e"/><circle cx="125" cy="74" r="3.5" fill="#f43f5e"/><circle cx="145" cy="74" r="3.5" fill="#f43f5e"/><circle cx="165" cy="74" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="94" r="3.5" fill="#f43f5e"/><circle cx="55" cy="94" r="3.5" fill="#f43f5e"/><circle cx="75" cy="94" r="3.5" fill="#f43f5e"/><circle cx="125" cy="94" r="3.5" fill="#f43f5e"/><circle cx="145" cy="94" r="3.5" fill="#f43f5e"/><circle cx="165" cy="94" r="3.5" fill="#f43f5e"/>
+  <circle cx="35" cy="114" r="3.5" fill="#f43f5e"/><circle cx="55" cy="114" r="3.5" fill="#f43f5e"/><circle cx="75" cy="114" r="3.5" fill="#f43f5e"/><circle cx="125" cy="114" r="3.5" fill="#f43f5e"/><circle cx="145" cy="114" r="3.5" fill="#f43f5e"/><circle cx="165" cy="114" r="3.5" fill="#f43f5e"/>
+</svg>
+              </div>
+              <div class="text-[9px] text-slate-500 truncate">บรรยาย / จุคนมากสุด</div>
+            </label>
           </div>
         </div>
         <button type="submit" id="mbSubmitBookingBtn" class="w-full py-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl text-sm shadow-md shadow-cyan-600/20 transition hover:from-cyan-700 hover:to-blue-700">ส่งแบบฟอร์มจองห้องประชุม</button>
@@ -2354,7 +2643,123 @@
       }
     }
 
+    
+    // ==========================================
+    // SEATING LAYOUT INTERACTIVE CARDS HELPER
+    // ==========================================
+    function selectSeatingLayout(cardEl) {
+      if (!cardEl) return;
+      const radio = cardEl.querySelector('input[type="radio"]');
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      updateSeatingCardsActive();
+    }
+
+    function updateSeatingCardsActive() {
+      // Desktop cards
+      document.querySelectorAll('#bookingForm .seating-card').forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        const indicator = card.querySelector('.seating-indicator');
+        if (radio && radio.checked) {
+          card.classList.add('is-active', 'border-cyan-600', 'bg-cyan-50/60');
+          card.classList.remove('border-slate-200', 'bg-white');
+          if (indicator) {
+            indicator.className = 'seating-indicator w-5 h-5 rounded-full border-2 border-cyan-600 bg-cyan-600 text-white flex items-center justify-center text-[10px] shadow-xs';
+          }
+        } else {
+          card.classList.remove('is-active', 'border-cyan-600', 'bg-cyan-50/60');
+          card.classList.add('border-slate-200', 'bg-white');
+          if (indicator) {
+            indicator.className = 'seating-indicator w-5 h-5 rounded-full border-2 border-slate-300 bg-white text-transparent flex items-center justify-center text-[10px] shadow-xs';
+          }
+        }
+      });
+
+      // Mobile cards
+      document.querySelectorAll('#mbBookingForm .seating-card').forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        const indicator = card.querySelector('.seating-indicator');
+        if (radio && radio.checked) {
+          card.classList.add('is-active', 'border-cyan-600', 'bg-cyan-50/60');
+          card.classList.remove('border-slate-200', 'bg-white');
+          if (indicator) {
+            indicator.className = 'seating-indicator w-4 h-4 rounded-full border border-cyan-600 bg-cyan-600 text-white flex items-center justify-center text-[8px]';
+          }
+        } else {
+          card.classList.remove('is-active', 'border-cyan-600', 'bg-cyan-50/60');
+          card.classList.add('border-slate-200', 'bg-white');
+          if (indicator) {
+            indicator.className = 'seating-indicator w-4 h-4 rounded-full border border-slate-300 bg-white text-transparent flex items-center justify-center text-[8px]';
+          }
+        }
+      });
+    }
+
+    // ==========================================
+    // LINE NOTIFICATION HELPERS
+    // ==========================================
+    function copyLineWebhookUrl() {
+      const url = "https://script.google.com/macros/s/AKfycbxGmA9Cl_rco-I7xHm_K1leef44nZbrDDNddxJaE-FQrakME21e5QZ3xB282r4hpC9m/exec";
+      navigator.clipboard.writeText(url).then(() => {
+        const btnText = document.getElementById('copyWebhookBtnText');
+        if (btnText) {
+          btnText.textContent = 'คัดลอกสำเร็จ!';
+          setTimeout(() => { btnText.textContent = 'คัดลอก URL'; }, 2000);
+        }
+      }).catch(err => {
+        prompt('คัดลอก Webhook URL:', url);
+      });
+    }
+
+    async function triggerTestLineNotification() {
+      const btn = document.getElementById('btnTestLinePush');
+      const resultBox = document.getElementById('lineTestResultBox');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>กำลังส่งข้อความ...</span>';
+      }
+      if (resultBox) {
+        resultBox.classList.add('hidden');
+      }
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'testLineNotification',
+            passcode: '1234'
+          })
+        });
+        const json = await res.json();
+        if (resultBox) {
+          resultBox.classList.remove('hidden');
+          if (json.success) {
+            resultBox.className = 'p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-2';
+            resultBox.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>' + (json.message || 'ส่งข้อความแจ้งเตือนทดสอบเข้า LINE เรียบร้อยแล้ว!') + '</span>';
+          } else {
+            resultBox.className = 'p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-bold flex items-center gap-2';
+            resultBox.innerHTML = '<i class="fa-solid fa-circle-exclamation text-rose-600 text-base"></i><span>' + (json.message || 'ส่งข้อความไม่สำเร็จ') + '</span>';
+          }
+        }
+      } catch (err) {
+        if (resultBox) {
+          resultBox.classList.remove('hidden');
+          resultBox.className = 'p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs font-bold flex items-center gap-2';
+          resultBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-600 text-base"></i><span>เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message + '</span>';
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>ส่งข้อความทดสอบ (Test Push)</span>';
+        }
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+      try { updateSeatingCardsActive(); } catch(e){}
       // Safety timeout to ensure loading overlay always dismisses even on network lag
       setTimeout(() => {
         const loader = document.getElementById('loading');
@@ -3193,17 +3598,19 @@
       const rSec = document.getElementById('adminRoomsSubSection');
       const oSec = document.getElementById('adminOverviewSubSection');
       const eSec = document.getElementById('adminEmployeesSubSection');
+      const lSec = document.getElementById('adminLineSubSection');
       const bBtn = document.getElementById('adminSubTabBookingsBtn');
       const rBtn = document.getElementById('adminSubTabRoomsBtn');
       const oBtn = document.getElementById('adminSubTabOverviewBtn');
       const eBtn = document.getElementById('adminSubTabEmployeesBtn');
+      const lBtn = document.getElementById('adminSubTabLineBtn');
 
       // Reset all buttons
-      [bBtn, rBtn, oBtn, eBtn].forEach(btn => {
+      [bBtn, rBtn, oBtn, eBtn, lBtn].forEach(btn => {
         if (btn) btn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer';
       });
       // Hide all sections
-      [bSec, rSec, oSec, eSec].forEach(sec => {
+      [bSec, rSec, oSec, eSec, lSec].forEach(sec => {
         if (sec) sec.classList.add('hidden');
       });
 
@@ -3223,6 +3630,9 @@
         if (eSec) eSec.classList.remove('hidden');
         if (eBtn) eBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-2xs cursor-pointer';
         if (appEmployeesList.length === 0) { loadEmployees(); } else { renderAdminEmployeesTable(); }
+      } else if (sub === 'line') {
+        if (lSec) lSec.classList.remove('hidden');
+        if (lBtn) lBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-2xs cursor-pointer';
       }
     }
 
@@ -4197,13 +4607,7 @@
                 </span>
               </div>
 
-              <!-- Quick Presets -->
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-xs font-extrabold text-slate-500 mr-1"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
-                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '12:00')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 hover:border-cyan-300 transition shadow-3xs">⚡ เช้า (08-12)</button>
-                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('13:00', '17:00')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 hover:border-cyan-300 transition shadow-3xs">⚡ บ่าย (13-17)</button>
-                <button type="button" onclick="this.closest('.booking-date-row')._applyPreset('08:00', '17:00')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 hover:border-cyan-300 transition shadow-3xs">⚡ เต็มวัน (08-17)</button>
-              </div>
+
             </div>
           </div>
 
@@ -4396,7 +4800,12 @@
         items: items,
         empId: formEmpVal,
         bookedBy: document.getElementById('formBookedBy').value,
-        department: document.getElementById('formDepartment').value,
+        department: (function() {
+          const val = (document.getElementById('formDepartment')?.value || '').trim();
+          if (val) return val;
+          const emp = (appEmployeesList || []).find(e => e.emp_id === formEmpVal);
+          return (emp && emp.department) ? emp.department : '-';
+        })(),
         purpose: document.getElementById('formPurpose').value,
         meetingType: document.querySelector('input[name="meetingType"]:checked').value,
         attendees: document.getElementById('formAttendees').value,
@@ -4675,15 +5084,7 @@
               </span>
             </div>
 
-            <!-- Quick Presets -->
-            <div class="flex items-center justify-between pt-1.5 border-t border-slate-100 flex-wrap gap-1.5">
-              <span class="text-[10.5px] font-extrabold text-slate-500"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>เลือกด่วน:</span>
-              <div class="flex items-center gap-1 flex-wrap">
-                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '12:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition shadow-3xs">⚡ เช้า (08-12)</button>
-                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('13:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition shadow-3xs">⚡ บ่าย (13-17)</button>
-                <button type="button" onclick="this.closest('.mb-booking-date-row')._applyPreset('08:00', '17:00')" class="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200 transition shadow-3xs">⚡ เต็มวัน (08-17)</button>
-              </div>
-            </div>
+
           </div>
 
           <!-- Bottom Row: The Timeline Slider (เส้นเวลาแบบหนาชัดเจน) -->
@@ -4866,7 +5267,12 @@
         items: items,
         empId: mbEmpVal,
         bookedBy: document.getElementById('mbFormBookedBy').value,
-        department: document.getElementById('mbFormDepartment').value,
+        department: (function() {
+          const val = (document.getElementById('mbFormDepartment')?.value || '').trim();
+          if (val) return val;
+          const emp = (appEmployeesList || []).find(e => e.emp_id === mbFormEmpVal);
+          return (emp && emp.department) ? emp.department : '-';
+        })(),
         purpose: document.getElementById('mbFormPurpose').value,
         meetingType: document.querySelector('input[name="mbMeetingType"]:checked').value,
         attendees: document.getElementById('mbFormAttendees').value,

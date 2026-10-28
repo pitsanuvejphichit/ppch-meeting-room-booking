@@ -75,6 +75,14 @@ function doPost(e) {
       const res = getAdminDashboardData(contents.passcode);
       return createJsonResponse(res);
     }
+    if (contents.action === 'testLineNotification') {
+      const res = testLineNotification(contents.passcode);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'updateLineSettings') {
+      const res = updateLineSettings(contents.passcode, contents.targetId, contents.channelToken);
+      return createJsonResponse(res);
+    }
 
     // 2. LINE Webhook
     const events = contents.events;
@@ -986,6 +994,25 @@ function adminUpdateBookingStatus(passcode, bookingId, newStatus, remarks) {
   // อัปเดตคอลัมน์ที่ 15 (Status)
   sheet.getRange(foundRow, 15).setValue(newStatus);
 
+  // หากเป็นการยกเลิกการจอง ให้ส่งข้อความแจ้งเตือนเข้า LINE กลุ่ม/ผู้ดูแล
+  if (newStatus === 'ยกเลิก') {
+    try {
+      const bObj = {
+        id: String(data[foundRow - 1][0] || bookingId),
+        roomName: String(data[foundRow - 1][2] || '-'),
+        bookingDate: String(data[foundRow - 1][3] || '-'),
+        startTime: String(data[foundRow - 1][4] || '-'),
+        endTime: String(data[foundRow - 1][5] || '-'),
+        bookedBy: String(data[foundRow - 1][6] || '-'),
+        department: String(data[foundRow - 1][7] || '-'),
+        purpose: String(data[foundRow - 1][9] || '-')
+      };
+      sendCancellationNotificationToLine(bObj, remarks || '');
+    } catch (lineErr) {
+      Logger.log('Error triggering LINE cancel notification: ' + lineErr.toString());
+    }
+  }
+
   // Sync กับ Supabase
   try {
     const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
@@ -1160,4 +1187,384 @@ function replyLineMessage(channelToken, replyToken, text) {
 function selfCancelBooking(bookingId, empId) {
   const padEmpId = String(empId || '').trim().padStart(6, '0');
   return adminUpdateBookingStatus('1234', bookingId, 'ยกเลิก', 'พนักงานยกเลิกด้วยตนเอง (รหัส ' + padEmpId + ')');
+}
+
+/**
+ * ส่งการแจ้งเตือนยกเลิกการจองไปยัง LINE Bot Flex Message API
+ */
+function sendCancellationNotificationToLine(booking, remarks) {
+  try {
+    const settings = getSettingsDict();
+    const channelToken = settings.LINE_CHANNEL_ACCESS_TOKEN;
+    const adminUserId = settings.LINE_ADMIN_USER_ID;
+
+    if (!channelToken || !adminUserId) {
+      Logger.log('No LINE credentials set in Settings sheet.');
+      return;
+    }
+
+    const bId = booking.id || booking.bookingId || '-';
+    const room = booking.roomName || booking.room_name || '-';
+    const bDate = booking.bookingDate || booking.booking_date || '-';
+    const sTime = booking.startTime || booking.start_time || '-';
+    const eTime = booking.endTime || booking.end_time || '-';
+    const bookedBy = booking.bookedBy || booking.booked_by || '-';
+    const dept = booking.department || '-';
+    const purpose = booking.purpose || '-';
+    const cancelRemark = remarks ? String(remarks) : 'พนักงานยกเลิกด้วยตนเอง';
+
+    const flexPayload = {
+      to: adminUserId,
+      messages: [
+        {
+          type: "flex",
+          altText: "⚠️ แจ้งยกเลิกการจอง: " + room + " (" + bDate + ")",
+          contents: {
+            type: "bubble",
+            size: "mega",
+            header: {
+              type: "box",
+              layout: "vertical",
+              backgroundColor: "#dc2626",
+              paddingTop: "16px",
+              paddingBottom: "16px",
+              paddingStart: "20px",
+              paddingEnd: "20px",
+              contents: [
+                {
+                  type: "text",
+                  text: "🏥 โรงพยาบาลพิษณุเวช พิจิตร",
+                  color: "#fee2e2",
+                  size: "xs",
+                  weight: "bold"
+                },
+                {
+                  type: "text",
+                  text: "⚠️ มีการยกเลิกการจองห้องประชุม",
+                  color: "#ffffff",
+                  size: "lg",
+                  weight: "bold",
+                  margin: "xs"
+                }
+              ]
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              paddingAll: "18px",
+              spacing: "md",
+              contents: [
+                {
+                  type: "box",
+                  layout: "vertical",
+                  backgroundColor: "#fef2f2",
+                  cornerRadius: "md",
+                  paddingAll: "12px",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "รหัสการจอง: " + bId,
+                      color: "#b91c1c",
+                      weight: "bold",
+                      size: "sm"
+                    },
+                    {
+                      type: "text",
+                      text: "สถานะ: ยกเลิกเรียบร้อย (ช่วงเวลานี้ว่างแล้ว)",
+                      color: "#ef4444",
+                      size: "xs",
+                      margin: "xs"
+                    }
+                  ]
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  spacing: "xs",
+                  contents: [
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        { type: "text", text: "ห้องประชุม:", size: "xs", color: "#64748b", flex: 3 },
+                        { type: "text", text: room, size: "xs", color: "#0f172a", weight: "bold", flex: 7 }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        { type: "text", text: "วันที่:", size: "xs", color: "#64748b", flex: 3 },
+                        { type: "text", text: bDate, size: "xs", color: "#0f172a", flex: 7 }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        { type: "text", text: "เวลา:", size: "xs", color: "#64748b", flex: 3 },
+                        { type: "text", text: sTime + " - " + eTime + " น.", size: "xs", color: "#0f172a", flex: 7 }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        { type: "text", text: "ผู้จองเดิม:", size: "xs", color: "#64748b", flex: 3 },
+                        { type: "text", text: bookedBy + " (" + dept + ")", size: "xs", color: "#0f172a", flex: 7 }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        { type: "text", text: "หัวข้อเดิม:", size: "xs", color: "#64748b", flex: 3 },
+                        { type: "text", text: purpose, size: "xs", color: "#0f172a", flex: 7 }
+                      ]
+                    },
+                    {
+                      type: "box",
+                      layout: "horizontal",
+                      contents: [
+                        { type: "text", text: "หมายเหตุ:", size: "xs", color: "#64748b", flex: 3 },
+                        { type: "text", text: cancelRemark, size: "xs", color: "#dc2626", weight: "bold", flex: 7 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            footer: {
+              type: "box",
+              layout: "vertical",
+              paddingAll: "14px",
+              contents: [
+                {
+                  type: "button",
+                  style: "primary",
+                  color: "#0891b2",
+                  action: {
+                    type: "uri",
+                    label: "เปิดปฏิทินจองห้องประชุม",
+                    uri: "https://pitsanuvejphichit.github.io/ppch-meeting-room-booking/"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    };
+
+    const options = {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + channelToken
+      },
+      payload: JSON.stringify(flexPayload),
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', options);
+  } catch (err) {
+    Logger.log('Failed to send LINE cancellation notification: ' + err.toString());
+  }
+}
+
+/**
+ * ทดสอบส่งการแจ้งเตือน LINE Bot Flex Message API
+ */
+function testLineNotification(passcode) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const channelToken = settings.LINE_CHANNEL_ACCESS_TOKEN;
+  const adminUserId = settings.LINE_ADMIN_USER_ID;
+
+  if (!channelToken || !adminUserId) {
+    return { success: false, message: 'ยังไม่ได้ตั้งค่า Token หรือ Target ID ในระบบ' };
+  }
+
+  const nowStr = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss');
+  const flexPayload = {
+    to: adminUserId,
+    messages: [
+      {
+        type: "flex",
+        altText: "🔔 ทดสอบระบบแจ้งเตือนการจองห้องประชุม PPCH",
+        contents: {
+          type: "bubble",
+          size: "mega",
+          header: {
+            type: "box",
+            layout: "vertical",
+            backgroundColor: "#0891b2",
+            paddingTop: "16px",
+            paddingBottom: "16px",
+            paddingStart: "20px",
+            paddingEnd: "20px",
+            contents: [
+              {
+                type: "text",
+                text: "🏥 โรงพยาบาลพิษณุเวช พิจิตร",
+                color: "#cffafe",
+                size: "xs",
+                weight: "bold"
+              },
+              {
+                type: "text",
+                text: "🔔 ทดสอบการแจ้งเตือน LINE Bot",
+                color: "#ffffff",
+                size: "lg",
+                weight: "bold",
+                margin: "xs"
+              }
+            ]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            paddingAll: "18px",
+            spacing: "md",
+            contents: [
+              {
+                type: "box",
+                layout: "vertical",
+                backgroundColor: "#ecfdf5",
+                cornerRadius: "md",
+                paddingAll: "12px",
+                contents: [
+                  {
+                    type: "text",
+                    text: "✅ เชื่อมต่อระบบสำเร็จ 100%!",
+                    color: "#059669",
+                    weight: "bold",
+                    size: "sm"
+                  },
+                  {
+                    type: "text",
+                    text: "ระบบพร้อมส่งข้อความแจ้งเตือนอัตโนมัติเข้ากลุ่มงานทันทีเมื่อมีการจองใหม่หรือมีการยกเลิกห้องประชุม",
+                    color: "#047857",
+                    size: "xs",
+                    wrap: true,
+                    margin: "xs"
+                  }
+                ]
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                spacing: "xs",
+                contents: [
+                  {
+                    type: "box",
+                    layout: "horizontal",
+                    contents: [
+                      { type: "text", text: "Target ID:", size: "xs", color: "#64748b", flex: 3 },
+                      { type: "text", text: adminUserId, size: "xs", color: "#0f172a", weight: "bold", flex: 7 }
+                    ]
+                  },
+                  {
+                    type: "box",
+                    layout: "horizontal",
+                    contents: [
+                      { type: "text", text: "เวลาทดสอบ:", size: "xs", color: "#64748b", flex: 3 },
+                      { type: "text", text: nowStr + " น.", size: "xs", color: "#0f172a", flex: 7 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            paddingAll: "14px",
+            contents: [
+              {
+                type: "button",
+                style: "primary",
+                color: "#0891b2",
+                action: {
+                  type: "uri",
+                  label: "เปิดระบบจองห้องประชุม PPCH",
+                  uri: "https://pitsanuvejphichit.github.io/ppch-meeting-room-booking/"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  };
+
+  try {
+    const options = {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + channelToken
+      },
+      payload: JSON.stringify(flexPayload),
+      muteHttpExceptions: true
+    };
+    const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', options);
+    const respCode = response.getResponseCode();
+    const respText = response.getContentText();
+    if (respCode >= 200 && respCode < 300) {
+      return { success: true, message: 'ส่งข้อความแจ้งเตือนทดสอบเข้า LINE กลุ่มเรียบร้อยแล้ว!' };
+    } else {
+      return { success: false, message: 'LINE API Code ' + respCode + ': ' + respText };
+    }
+  } catch (err) {
+    return { success: false, message: 'ข้อผิดพลาด: ' + err.toString() };
+  }
+}
+
+/**
+ * อัปเดตการตั้งค่า LINE Target ID & Access Token
+ */
+function updateLineSettings(passcode, targetId, channelToken) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName('Settings');
+  if (!sheet) {
+    initDatabase();
+    sheet = ss.getSheetByName('Settings');
+  }
+
+  const data = sheet.getDataRange().getValues();
+  if (targetId) {
+    let found = false;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === 'LINE_ADMIN_USER_ID') {
+        sheet.getRange(i + 1, 2).setValue(String(targetId).trim());
+        found = true;
+        break;
+      }
+    }
+    if (!found) sheet.appendRow(['LINE_ADMIN_USER_ID', String(targetId).trim()]);
+  }
+
+  if (channelToken) {
+    let found = false;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === 'LINE_CHANNEL_ACCESS_TOKEN') {
+        sheet.getRange(i + 1, 2).setValue(String(channelToken).trim());
+        found = true;
+        break;
+      }
+    }
+    if (!found) sheet.appendRow(['LINE_CHANNEL_ACCESS_TOKEN', String(channelToken).trim()]);
+  }
+
+  return { success: true, message: 'บันทึกการตั้งค่า LINE เรียบร้อยแล้ว' };
 }
