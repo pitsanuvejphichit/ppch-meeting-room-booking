@@ -89,20 +89,40 @@ function doPost(e) {
     if (events && events.length > 0) {
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
+
+        // เมื่อบอทถูกเชิญเข้าร่วมกลุ่ม ให้บันทึก Group ID อัตโนมัติและส่งข้อความทักทาย
+        if (event.type === 'join' && event.source && event.source.type === 'group') {
+          const newGroupId = event.source.groupId;
+          if (newGroupId) {
+            updateLineSettings('1234', newGroupId, null);
+            const settings = getSettingsDict();
+            const channelToken = settings.LINE_CHANNEL_ACCESS_TOKEN;
+            if (channelToken) {
+              const welcomeText = "🏥 สวัสดีครับ! บอทระบบจองห้องประชุม PPCH เข้าร่วมกลุ่มเรียบร้อยแล้ว\n\n✅ ระบบได้บันทึก Group ID นี้สำหรับการแจ้งเตือนอัตโนมัติแล้ว\n(" + newGroupId + ")\n\n🔔 เมื่อมีการจองใหม่หรือการยกเลิกห้องประชุม ระบบจะส่งการแจ้งเตือนเข้ามาที่กลุ่มนี้ทันทีครับ";
+              replyLineMessage(channelToken, event.replyToken, welcomeText);
+            }
+          }
+          continue;
+        }
+
         if (event.type === 'message' && event.message && event.message.type === 'text') {
           const text = String(event.message.text).trim();
           if (text === '/id' || text === '!id' || text === 'เช็คไอดี') {
             const settings = getSettingsDict();
             const channelToken = settings.LINE_CHANNEL_ACCESS_TOKEN;
             if (channelToken) {
-              let replyText = `🔎 ข้อมูลการเชื่อมต่อ LINE:\n`;
-              replyText += `• User ID ของคุณ: ${event.source.userId || 'ไม่พบ'}\n`;
+              let replyText = "🔎 ข้อมูลการเชื่อมต่อ LINE:\n";
+              replyText += "• User ID ของคุณ: " + (event.source.userId || 'ไม่พบ') + "\n";
               if (event.source.type === 'group') {
-                replyText += `• Group ID ของกลุ่มนี้: ${event.source.groupId || 'ไม่พบ'}\n`;
+                const gId = event.source.groupId || 'ไม่พบ';
+                replyText += "• Group ID ของกลุ่มนี้: " + gId + "\n";
+                if (event.source.groupId) {
+                  updateLineSettings('1234', event.source.groupId, null);
+                  replyText += "\n✅ ระบบได้บันทึกและเชื่อมโยง Group ID นี้สำหรับการแจ้งเตือนอัตโนมัติเรียบร้อยแล้วครับ!";
+                }
               } else if (event.source.type === 'room') {
-                replyText += `• Room ID ของห้องแชทนี้: ${event.source.roomId || 'ไม่พบ'}\n`;
+                replyText += "• Room ID ของห้องแชทนี้: " + (event.source.roomId || 'ไม่พบ') + "\n";
               }
-              replyText += `\nคัดลอก ID ข้างต้นไปใส่ในแถว LINE_ADMIN_USER_ID ของชีท Settings ได้เลยครับ`;
               replyLineMessage(channelToken, event.replyToken, replyText);
             }
           }
@@ -322,8 +342,8 @@ function getSettingsDict() {
     dict['LINE_CHANNEL_ACCESS_TOKEN'] = targetToken;
   }
 
-  // เขียนรหัส LINE_ADMIN_USER_ID ลงแผ่นงานอัตโนมัติหากยังไม่มีหรือข้อมูลไม่ตรง
-  if (dict['LINE_ADMIN_USER_ID'] !== targetAdminId) {
+  // เขียนรหัส LINE_ADMIN_USER_ID ลงแผ่นงานอัตโนมัติหากยังไม่มีค่า
+  if (!dict['LINE_ADMIN_USER_ID']) {
     if (hasAdminIdRow && adminIdRowIndex !== -1) {
       sheet.getRange(adminIdRowIndex, 2).setValue(targetAdminId);
     } else {
