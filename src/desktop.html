@@ -1027,6 +1027,32 @@
 
               </div>
 
+              <!-- Daily 08:00 AM Morning Notification Card -->
+              <div class="bg-cyan-50/60 border border-cyan-200 rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 shadow-3xs">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-cyan-600 text-white flex items-center justify-center text-lg font-bold shadow-xs shrink-0">
+                    <i class="fa-solid fa-clock"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-xs font-bold text-slate-800">แจ้งเตือนสรุปตารางห้องประชุมอัตโนมัติประจำวัน (ทุกๆ 08:00 น.)</h4>
+                      <span class="text-[10px] font-bold text-cyan-800 bg-cyan-100 px-2 py-0.5 rounded-full border border-cyan-300">ทำงานทุกวัน 08:00 น.</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-0.5">ระบบจะส่งการ์ดสรุปเข้า LINE เฉพาะวันที่มีการจองเท่านั้น หากไม่มีรายการจองจะไม่ส่งรบกวน</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="button" onclick="triggerTestDailyMorning()" id="btnTestDailyMorning" class="px-3.5 py-2 bg-white hover:bg-cyan-50 text-cyan-700 border border-cyan-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-3xs cursor-pointer">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>ทดสอบส่งสรุปวันนี้</span>
+                  </button>
+                  <button type="button" onclick="triggerSetupDailyTrigger()" id="btnSetupTrigger" class="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>ตั้งค่า Trigger 08:00 น.</span>
+                  </button>
+                </div>
+              </div>
+
               <!-- Action & Test Push Button -->
               <div class="border-t border-slate-200 pt-4 flex items-center justify-between flex-wrap gap-3">
                 <div>
@@ -2916,6 +2942,76 @@
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>ส่งข้อความทดสอบ (Test Push)</span>';
+        }
+      }
+    }
+
+    async function triggerTestDailyMorning() {
+      const btn = document.getElementById('btnTestDailyMorning');
+      const resultBox = document.getElementById('lineTestResultBox');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>กำลังตรวจสอบ...</span>';
+      }
+      if (resultBox) resultBox.classList.add('hidden');
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'testDailyMorningNotification', passcode: '1234' })
+        });
+        const json = await res.json();
+        if (resultBox) {
+          resultBox.classList.remove('hidden');
+          resultBox.className = 'p-3.5 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-900 text-xs font-bold flex items-center gap-2';
+          resultBox.innerHTML = '<i class="fa-solid fa-circle-check text-cyan-600 text-base"></i><span>' + (json.message || 'ดำเนินการเรียบร้อยแล้ว') + '</span>';
+        }
+      } catch (err) {
+        if (resultBox) {
+          resultBox.classList.remove('hidden');
+          resultBox.className = 'p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-bold flex items-center gap-2';
+          resultBox.innerHTML = '<i class="fa-solid fa-circle-exclamation text-rose-600 text-base"></i><span>เกิดข้อผิดพลาด: ' + err.message + '</span>';
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>ทดสอบส่งสรุปวันนี้</span>';
+        }
+      }
+    }
+
+    async function triggerSetupDailyTrigger() {
+      const btn = document.getElementById('btnSetupTrigger');
+      const resultBox = document.getElementById('lineTestResultBox');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>กำลังตั้งค่า...</span>';
+      }
+      if (resultBox) resultBox.classList.add('hidden');
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'setupDaily8amTrigger', passcode: '1234' })
+        });
+        const json = await res.json();
+        if (resultBox) {
+          resultBox.classList.remove('hidden');
+          resultBox.className = 'p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-2';
+          resultBox.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600 text-base"></i><span>' + (json.message || 'ติดตั้งเวลา 08:00 น. สำเร็จ') + '</span>';
+        }
+      } catch (err) {
+        if (resultBox) {
+          resultBox.classList.remove('hidden');
+          resultBox.className = 'p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs font-bold flex items-center gap-2';
+          resultBox.innerHTML = '<i class="fa-solid fa-circle-exclamation text-rose-600 text-base"></i><span>เกิดข้อผิดพลาด: ' + err.message + '</span>';
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-bell"></i> <span>ตั้งค่า Trigger 08:00 น.</span>';
         }
       }
     }

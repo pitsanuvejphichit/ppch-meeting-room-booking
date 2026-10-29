@@ -27,6 +27,14 @@ function doGet(e) {
     const res = getOverviewData(pType, year, month);
     return createJsonResponse(res);
   }
+  if (action === 'dailyNotification') {
+    const res = dailyMorningBookingNotification();
+    return createJsonResponse(res);
+  }
+  if (action === 'setupDailyTrigger') {
+    const res = setupDaily8amTrigger();
+    return createJsonResponse(res);
+  }
 
   const mode = (e && e.parameter && (e.parameter.mode === 'admin' || e.parameter.page === 'admin')) ? 'admin' : 'user';
 
@@ -96,6 +104,14 @@ function doPost(e) {
     }
     if (contents.action === 'updateLineSettings') {
       const res = updateLineSettings(contents.passcode, contents.targetId, contents.channelToken);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'testDailyMorningNotification') {
+      const res = dailyMorningBookingNotification();
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'setupDaily8amTrigger') {
+      const res = setupDaily8amTrigger();
       return createJsonResponse(res);
     }
 
@@ -1738,4 +1754,284 @@ function updateLineSettings(passcode, targetId, channelToken) {
   }
 
   return { success: true, message: 'บันทึกการตั้งค่า LINE เรียบร้อยแล้ว' };
+}
+
+/**
+ * ==============================================================
+ * ⏰ ระบบแจ้งเตือนสรุปตารางการใช้ห้องประชุมประจำวัน (08:00 น.)
+ * (ส่งเฉพาะวันที่มีการจองห้องประชุมเท่านั้น หากไม่มีจะไม่ส่งรบกวน)
+ * ==============================================================
+ */
+function dailyMorningBookingNotification() {
+  const settings = getSettingsDict();
+  const channelToken = settings.LINE_CHANNEL_ACCESS_TOKEN;
+  const targetId = settings.LINE_ADMIN_USER_ID;
+
+  if (!channelToken || !targetId) {
+    Logger.log('dailyMorningBookingNotification: Missing LINE token or target ID');
+    return { success: false, message: 'ยังไม่ได้ตั้งค่า Token หรือ Target ID ในระบบ' };
+  }
+
+  const now = new Date();
+  const todayStr = Utilities.formatDate(now, 'Asia/Bangkok', 'yyyy-MM-dd');
+
+  const thaiDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+  const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+  const dayName = thaiDays[now.getDay()];
+  const dateNum = now.getDate();
+  const monthName = thaiMonths[now.getMonth()];
+  const thaiYear = now.getFullYear() + 543;
+  const fullThaiDate = `${dayName}ที่ ${dateNum} ${monthName} ${thaiYear}`;
+
+  let todayBookings = [];
+
+  // 1. ดึงข้อมูลจาก Supabase โดยตรง (รวดเร็วและเป็นข้อมูลปัจจุบันที่สุด)
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+    const url = `${supabaseUrl}/rest/v1/room_bookings?booking_date=eq.${todayStr}&order=start_time.asc`;
+    const res = UrlFetchApp.fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      muteHttpExceptions: true
+    });
+    if (res.getResponseCode() === 200) {
+      const bList = JSON.parse(res.getContentText());
+      todayBookings = (bList || []).filter(b => b.status !== 'ยกเลิก' && b.status !== 'ปฏิเสธ');
+    }
+  } catch (e) {
+    Logger.log('Supabase fetch error in daily notification: ' + e.toString());
+  }
+
+  // 2. สำรองข้อมูลจาก Google Sheets หาก Supabase ขัดข้อง
+  if (todayBookings.length === 0) {
+    const ss = getSpreadsheet();
+    const sheet = ss.getSheetByName('Bookings');
+    if (sheet) {
+      const data = sheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const bDate = formatDate(row[3]);
+        const status = String(row[14] || '');
+        if (bDate === todayStr && status !== 'ยกเลิก' && status !== 'ปฏิเสธ') {
+          todayBookings.push({
+            booking_id: row[0],
+            room_name: String(row[2] || ''),
+            booking_date: bDate,
+            start_time: String(row[4] || ''),
+            end_time: String(row[5] || ''),
+            booked_by: String(row[6] || ''),
+            department: String(row[7] || ''),
+            purpose: String(row[9] || row[6] || '')
+          });
+        }
+      }
+    }
+  }
+
+  // หากวันนี้ไม่มีการจองห้องประชุม ให้ข้ามไป ไม่ส่งรบกวน
+  if (todayBookings.length === 0) {
+    Logger.log(`วันนี้ (${todayStr}) ไม่มีการจองห้องประชุม ไม่ต้องส่งแจ้งเตือน`);
+    return { success: true, count: 0, message: `วันนี้ (${fullThaiDate}) ไม่มีการจองห้องประชุม ระบบจึงไม่ส่งข้อความรบกวน` };
+  }
+
+  const getRoomColorHex = (rName) => {
+    const r = String(rName || '');
+    if (r.includes('ใหญ่')) return '#0284c7';
+    if (r.includes('ม่าน')) return '#059669';
+    if (r.includes('กระจก')) return '#7c3aed';
+    if (r.includes('ชั้น 6')) return '#ea580c';
+    if (r.includes('VIP')) return '#db2777';
+    return '#0284c7';
+  };
+
+  const bookingBoxes = [];
+  todayBookings.forEach((b, idx) => {
+    const rColor = getRoomColorHex(b.room_name);
+    const sTime = String(b.start_time || '08:00').substring(0, 5);
+    const eTime = String(b.end_time || '12:00').substring(0, 5);
+    const timeDisplay = `${sTime} - ${eTime} น.`;
+
+    bookingBoxes.push({
+      type: "box",
+      layout: "vertical",
+      backgroundColor: "#f8fafc",
+      cornerRadius: "12px",
+      paddingAll: "12px",
+      borderWidth: "1px",
+      borderColor: "#e2e8f0",
+      margin: idx === 0 ? "xs" : "md",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              backgroundColor: rColor,
+              cornerRadius: "6px",
+              paddingStart: "8px",
+              paddingEnd: "8px",
+              paddingTop: "2px",
+              paddingBottom: "2px",
+              contents: [
+                {
+                  type: "text",
+                  text: b.room_name || 'ห้องประชุม',
+                  color: "#ffffff",
+                  size: "xxs",
+                  weight: "bold"
+                }
+              ]
+            },
+            {
+              type: "text",
+              text: timeDisplay,
+              color: rColor,
+              size: "xs",
+              weight: "bold",
+              align: "end",
+              gravity: "center"
+            }
+          ]
+        },
+        {
+          type: "text",
+          text: `หัวข้อ: ${b.purpose || b.topic || b.booked_by || '-'}`,
+          color: "#0f172a",
+          size: "xs",
+          weight: "bold",
+          margin: "sm",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: `ผู้จอง: ${b.booked_by || b.requester_name || '-'} (${b.department || '-'})`,
+          color: "#64748b",
+          size: "xxs",
+          margin: "xs",
+          wrap: true
+        }
+      ]
+    });
+  });
+
+  const flexMessage = {
+    type: "flex",
+    altText: `📅 แจ้งเตือน 08:00 น. วันนี้มีการจองห้องประชุม (${todayBookings.length} รายการ)`,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#0891b2",
+        paddingAll: "16px",
+        contents: [
+          {
+            type: "text",
+            text: "โรงพยาบาลพิษณุเวช พิจิตร",
+            color: "#cffafe",
+            size: "xxs",
+            weight: "bold"
+          },
+          {
+            type: "text",
+            text: "📅 สรุปรายการใช้ห้องประชุม วันนี้",
+            color: "#ffffff",
+            size: "md",
+            weight: "bold",
+            margin: "xs"
+          },
+          {
+            type: "text",
+            text: `${fullThaiDate} (พบ ${todayBookings.length} รายการ)`,
+            color: "#e0f2fe",
+            size: "xs",
+            margin: "xs"
+          }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        paddingAll: "16px",
+        contents: bookingBoxes
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            color: "#0891b2",
+            height: "sm",
+            action: {
+              type: "uri",
+              label: "📅 เปิดดูผังปฏิทินเต็มจอ",
+              uri: "https://pitsanuvejphichit.github.io/ppch-meeting-room-booking/"
+            }
+          },
+          {
+            type: "button",
+            style: "secondary",
+            color: "#f1f5f9",
+            height: "sm",
+            action: {
+              type: "uri",
+              label: "📝 จองห้องประชุมเพิ่มเติม",
+              uri: "https://pitsanuvejphichit.github.io/ppch-meeting-room-booking/?action=book"
+            }
+          }
+        ]
+      }
+    }
+  };
+
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      'Authorization': 'Bearer ' + channelToken
+    },
+    payload: JSON.stringify({
+      to: targetId,
+      messages: [flexMessage]
+    }),
+    muteHttpExceptions: true
+  };
+
+  const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', options);
+  Logger.log('dailyMorningBookingNotification sent! Status: ' + response.getContentText());
+
+  return { success: true, count: todayBookings.length, message: `ส่งสรุปรายการจองห้องประชุมของวันนี้ (${todayBookings.length} รายการ) เข้า LINE เรียบร้อยแล้ว` };
+}
+
+/**
+ * ติดตั้ง Trigger 08:00 น. อัตโนมัติใน Google Apps Script
+ */
+function setupDaily8amTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'dailyMorningBookingNotification') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+
+  // สร้าง Trigger ทุกวัน เวลา 08:00 น. (โซนเวลาของ Script / Asia/Bangkok)
+  ScriptApp.newTrigger('dailyMorningBookingNotification')
+    .timeBased()
+    .everyDays(1)
+    .atHour(8)
+    .create();
+
+  Logger.log('Setup daily 08:00 AM trigger successfully!');
+  return { success: true, message: 'ติดตั้งระบบแจ้งเตือนอัตโนมัติทุกวันเวลา 08:00 น. เรียบร้อยแล้ว' };
 }
