@@ -1793,9 +1793,11 @@
           },
           submitBooking: async function(payload) {
             try {
-              const bookingItems = payload.dates || [{ bookingDate: payload.bookingDate, startTime: payload.startTime, endTime: payload.endTime }];
+              const bookingItems = (payload.items && payload.items.length > 0) ? payload.items : (payload.dates || [{ bookingDate: payload.bookingDate, startTime: payload.startTime, endTime: payload.endTime }]);
               for (const item of bookingItems) {
                 const bId = 'BK-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random() * 900 + 100);
+                const sTime = String(item.startTime || '08:00').trim();
+                const eTime = String(item.endTime || '12:00').trim();
                 await fetch(`${SUPABASE_URL}/rest/v1/room_bookings`, {
                   method: 'POST',
                   headers: {
@@ -1809,8 +1811,8 @@
                     booking_id: bId,
                     room_name: payload.roomName,
                     booking_date: item.bookingDate,
-                    start_time: item.startTime,
-                    end_time: item.endTime,
+                    start_time: sTime.length === 5 ? sTime + ':00' : sTime,
+                    end_time: eTime.length === 5 ? eTime + ':00' : eTime,
                     emp_id: payload.empId || '000000',
                     requester_name: payload.bookedBy || payload.purpose || '-',
                     booked_by: payload.bookedBy || payload.purpose || '-',
@@ -1824,7 +1826,7 @@
                     equipment: Array.isArray(payload.equipment) ? payload.equipment : [payload.equipment || ''],
                     room_layout: payload.seatingLayout || 'นักเรียน',
                     seating_layout: payload.seatingLayout || 'นักเรียน',
-                    status: 'confirmed'
+                    status: 'จองเรียบร้อย'
                   })
                 });
               }
@@ -2855,7 +2857,11 @@
         const isSelected = (dateStr === selectedDateStr);
 
         const dayBookings = (overviewBookings || []).filter(b => {
-          return b.bookingDate === dateStr && !(b.status === 'ปฏิเสธ' || b.status === 'ยกเลิก');
+          const bDate = b.bookingDate || b.booking_date;
+          if (!bDate) return false;
+          const cleanDate = String(bDate).split('T')[0].trim();
+          const isCancelled = (b.status === 'ยกเลิก' || b.status === 'cancelled' || b.status === 'ปฏิเสธ');
+          return cleanDate === dateStr && !isCancelled;
         });
         const hasBookings = dayBookings.length > 0;
 
@@ -2960,7 +2966,13 @@
         const dObj = new Date(calYear, calMonth, day);
         const dayOfWeek = dObj.getDay();
 
-        const dayBookings = overviewBookings.filter(b => b.bookingDate === dateStr);
+        const dayBookings = (overviewBookings || []).filter(b => {
+          const bDate = b.bookingDate || b.booking_date;
+          if (!bDate) return false;
+          const cleanDate = String(bDate).split('T')[0].trim();
+          const isCancelled = (b.status === 'ยกเลิก' || b.status === 'cancelled' || b.status === 'ปฏิเสธ');
+          return cleanDate === dateStr && !isCancelled;
+        });
 
         const cell = document.createElement('div');
         cell.className = `min-h-[125px] p-3 rounded-2xl border-2 transition-all duration-150 cursor-pointer flex flex-col justify-between relative group shadow-2xs ${
@@ -3213,7 +3225,16 @@
         google.script.run
           .withSuccessHandler(res => {
             if (res && res.success && res.bookings) {
-              overviewBookings = res.bookings;
+              const fetchedMap = new Map();
+              res.bookings.forEach(b => {
+                const key = `${b.roomName}_${b.bookingDate}_${b.startTime}`;
+                fetchedMap.set(key, b);
+              });
+              const localPending = (overviewBookings || []).filter(b => {
+                const key = `${b.roomName}_${b.bookingDate}_${b.startTime}`;
+                return !fetchedMap.has(key) && !(b.status === 'ยกเลิก' || b.status === 'ปฏิเสธ');
+              });
+              overviewBookings = [...localPending, ...res.bookings];
               renderOverview();
               renderCalendar();
             }
@@ -4837,8 +4858,17 @@
             if (overlay) overlay.classList.add('hidden');
             if (res.success) {
               showToast(res.message || 'บันทึกแบบฟอร์มการจองเรียบร้อยแล้ว (สถานะ: จองเรียบร้อย)', 'success');
-              renderOverview();
+              const targetDate = (items[0] && items[0].bookingDate) || selectedDateStr;
+              selectedDateStr = targetDate;
+              if (targetDate) {
+                const parts = targetDate.split('-').map(Number);
+                if (parts.length >= 2) {
+                  calYear = parts[0];
+                  calMonth = parts[1] - 1;
+                }
+              }
               renderCalendar();
+              renderOverview();
               loadScheduleData();
               loadOverviewData();
 
@@ -5304,8 +5334,17 @@
             if (overlay) overlay.classList.add('hidden');
             if (res.success) {
               showToast(res.message || 'จองเรียบร้อยแล้ว', 'success');
-              renderOverview();
+              const targetDate = (items[0] && items[0].bookingDate) || selectedDateStr;
+              selectedDateStr = targetDate;
+              if (targetDate) {
+                const parts = targetDate.split('-').map(Number);
+                if (parts.length >= 2) {
+                  calYear = parts[0];
+                  calMonth = parts[1] - 1;
+                }
+              }
               renderCalendar();
+              renderOverview();
               loadScheduleData();
               loadOverviewData();
 
