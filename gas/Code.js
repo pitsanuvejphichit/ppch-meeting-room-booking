@@ -68,7 +68,22 @@ function doPost(e) {
       return createJsonResponse(res);
     }
     if (contents.action === 'adminUpdateRoomDetails') {
-      const res = adminUpdateRoomDetails(contents.passcode, contents.roomId, contents.capacity, contents.facilities, contents.color);
+      const res = adminUpdateRoomDetails(
+        contents.passcode,
+        contents.roomId,
+        contents.name || contents.roomName,
+        contents.location || contents.floor,
+        contents.color,
+        contents.status
+      );
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'adminAddRoom') {
+      const res = adminAddRoom(contents.passcode, contents.roomData);
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'adminDeleteRoom') {
+      const res = adminDeleteRoom(contents.passcode, contents.roomId);
       return createJsonResponse(res);
     }
     if (contents.action === 'getAdminDashboardData') {
@@ -1147,9 +1162,9 @@ function adminUpdateRoomStatus(passcode, roomId, newStatus) {
 }
 
 /**
- * แก้ไขรายละเอียดห้องประชุม (ความจุ, อุปกรณ์ประจำห้อง, ธีมสี)
+ * แก้ไขรายละเอียดห้องประชุม (ชื่อ, ชั้น/สถานที่, ธีมสี, สถานะ)
  */
-function adminUpdateRoomDetails(passcode, roomId, capacity, facilities, color) {
+function adminUpdateRoomDetails(passcode, roomId, name, location, color, status) {
   const settings = getSettingsDict();
   const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
   if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
@@ -1170,12 +1185,148 @@ function adminUpdateRoomDetails(passcode, roomId, capacity, facilities, color) {
   }
 
   if (foundRow !== -1) {
-    if (capacity) sheet.getRange(foundRow, 3).setValue(capacity);
-    if (facilities) sheet.getRange(foundRow, 5).setValue(facilities);
+    if (name) sheet.getRange(foundRow, 2).setValue(name);
+    if (location) sheet.getRange(foundRow, 4).setValue(location);
     if (color) sheet.getRange(foundRow, 6).setValue(color);
+    if (status) sheet.getRange(foundRow, 7).setValue(status);
+  }
+
+  // Sync Supabase
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+    const patchBody = {};
+    if (name) patchBody.name = name;
+    if (location) patchBody.floor = location;
+    if (color) patchBody.color = color;
+    if (status) patchBody.is_active = (status === 'พร้อมใช้งาน');
+
+    UrlFetchApp.fetch(`${supabaseUrl}/rest/v1/meeting_rooms?id=eq.${roomId}`, {
+      method: 'PATCH',
+      contentType: 'application/json',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      payload: JSON.stringify(patchBody),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    Logger.log('Supabase room PATCH error: ' + err.toString());
   }
 
   return { success: true, message: 'บันทึกข้อมูลห้องประชุมเรียบร้อยแล้ว' };
+}
+
+/**
+ * เพิ่มห้องประชุมใหม่
+ */
+function adminAddRoom(passcode, roomData) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName('Rooms');
+  if (!sheet) {
+    initDatabase();
+    sheet = ss.getSheetByName('Rooms');
+  }
+
+  const data = sheet.getDataRange().getValues();
+  let nextIdNum = data.length;
+  let newId = 'RM-' + String(nextIdNum).padStart(3, '0');
+  const existingIds = new Set(data.slice(1).map(r => String(r[0]).trim()));
+  while (existingIds.has(newId)) {
+    nextIdNum++;
+    newId = 'RM-' + String(nextIdNum).padStart(3, '0');
+  }
+
+  const name = String(roomData.name || '').trim();
+  const location = String(roomData.location || roomData.floor || 'ชั้น 5').trim();
+  const color = String(roomData.color || '#0284c7').trim();
+  const status = String(roomData.status || 'พร้อมใช้งาน').trim();
+
+  // Columns: 'Room ID', 'Room Name', 'Capacity', 'Location', 'Facilities', 'Color Theme', 'Status'
+  sheet.appendRow([newId, name, '', location, '', color, status]);
+
+  // Sync Supabase
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+    UrlFetchApp.fetch(`${supabaseUrl}/rest/v1/meeting_rooms`, {
+      method: 'POST',
+      contentType: 'application/json',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'return=minimal'
+      },
+      payload: JSON.stringify({
+        id: newId,
+        name: name,
+        floor: location,
+        color: color,
+        is_active: (status === 'พร้อมใช้งาน')
+      }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    Logger.log('Supabase room POST error: ' + err.toString());
+  }
+
+  return {
+    success: true,
+    message: `เพิ่มห้องประชุม "${name}" เรียบร้อยแล้ว`,
+    room: {
+      id: newId,
+      name: name,
+      location: location,
+      color: color,
+      status: status
+    }
+  };
+}
+
+/**
+ * ลบห้องประชุม
+ */
+function adminDeleteRoom(passcode, roomId) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== '1234' && String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่าน Admin ไม่ถูกต้อง' };
+  }
+
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Rooms');
+  if (!sheet) return { success: false, message: 'ไม่พบแผ่นงาน Rooms' };
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(roomId).trim() || String(data[i][1]).trim() === String(roomId).trim()) {
+      sheet.deleteRow(i + 1);
+      break;
+    }
+  }
+
+  // Delete from Supabase
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphdXhsemptaHRubmNyd3Jsb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDUxMDksImV4cCI6MjEwNzAyMTEwOX0.IFKN8_nv0U_UKNgeP4A-gcZ3u_EjDQhhvcyyW9P-Yw0';
+    UrlFetchApp.fetch(`${supabaseUrl}/rest/v1/meeting_rooms?id=eq.${roomId}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      muteHttpExceptions: true
+    });
+  } catch (err) {}
+
+  return { success: true, message: 'ลบห้องประชุมเรียบร้อยแล้ว' };
 }
 
 /**

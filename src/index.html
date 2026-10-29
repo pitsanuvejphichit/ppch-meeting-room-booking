@@ -765,6 +765,23 @@
 
         <!-- Subtab 2: Rooms Management -->
         <div id="adminRoomsSubSection" class="hidden space-y-4">
+          <!-- Room Management Header with Add Room Button -->
+          <div class="bg-white rounded-2xl p-4 border border-slate-200 flex flex-wrap justify-between items-center gap-3 shadow-xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-base border border-cyan-100">
+                <i class="fa-solid fa-door-open"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">จัดการข้อมูลห้องประชุม</h3>
+                <p class="text-[11px] text-slate-500" id="adminRoomsSubtitle">ทั้งหมด 5 ห้องประชุมในระบบ</p>
+              </div>
+            </div>
+            <button type="button" onclick="openAddRoomModal()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-plus text-xs"></i>
+              <span>เพิ่มห้องประชุมใหม่</span>
+            </button>
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="adminRoomsGrid">
             <!-- Rendered dynamically -->
           </div>
@@ -1362,7 +1379,16 @@
         <!-- Rendered dynamically -->
       </div>
       <div id="mbAdminRoomsContainer" class="hidden space-y-3">
-        <!-- Rendered dynamically -->
+        <div class="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="text-xs font-bold text-slate-800">จัดการห้องประชุม</div>
+          <button type="button" onclick="openAddRoomModal()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-xl shadow-xs shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-plus text-[10px]"></i>
+            <span>เพิ่มห้อง</span>
+          </button>
+        </div>
+        <div id="mbAdminRoomsList" class="space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
       </div>
       <div id="mbAdminEmployeesContainer" class="hidden space-y-3">
         <div class="flex gap-2">
@@ -1509,34 +1535,93 @@
           <i class="fa-solid fa-sliders"></i>
           <span>แก้ไขข้อมูลห้องประชุม</span>
         </h3>
-        <button type="button" onclick="closeEditRoomModal()" class="text-white/80 hover:text-white p-1">
+        <button type="button" onclick="closeEditRoomModal()" class="text-white/80 hover:text-white p-1 cursor-pointer">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <form onsubmit="handleEditRoomSubmit(event)" class="p-6 space-y-4 text-xs">
         <input type="hidden" id="editRoomId">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ชื่อห้องประชุม</label>
-          <input type="text" id="editRoomName" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600 cursor-not-allowed">
+          <label class="block font-bold text-slate-700 mb-1">ชื่อห้องประชุม <span class="text-red-500">*</span></label>
+          <input type="text" id="editRoomName" required class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ความจุ (คน)</label>
-          <input type="text" id="editRoomCapacity" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+          <label class="block font-bold text-slate-700 mb-1">ชั้น / สถานที่ตั้ง <span class="text-red-500">*</span></label>
+          <input type="text" id="editRoomLocation" required placeholder="เช่น ชั้น 5" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">อุปกรณ์ประจำห้อง</label>
-          <textarea id="editRoomFacilities" rows="2" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none"></textarea>
+          <label class="block font-bold text-slate-700 mb-1">โทนสีประจำห้อง (แถบสีบนปฏิทิน)</label>
+          <div class="flex items-center gap-3">
+            <input type="color" id="editRoomColorPicker" class="w-10 h-10 p-0.5 rounded-xl border border-slate-300 cursor-pointer" oninput="document.getElementById('editRoomColor').value = this.value">
+            <input type="text" id="editRoomColor" required class="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl font-mono text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none" oninput="document.getElementById('editRoomColorPicker').value = this.value">
+          </div>
         </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">สถานะห้องประชุม</label>
-          <select id="editRoomStatus" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none font-bold">
+          <select id="editRoomStatus" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none font-bold">
             <option value="พร้อมใช้งาน">พร้อมใช้งาน</option>
             <option value="ปิดปรับปรุง">ปิดปรับปรุงชั่วคราว</option>
           </select>
         </div>
         <div class="flex gap-2 pt-2">
-          <button type="button" onclick="closeEditRoomModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">ยกเลิก</button>
-          <button type="submit" class="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl shadow-md transition">บันทึก</button>
+          <button type="button" onclick="closeEditRoomModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition cursor-pointer">ยกเลิก</button>
+          <button type="submit" class="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl shadow-md transition cursor-pointer">บันทึกการแก้ไข</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD ROOM MODAL -->
+  <div id="addRoomModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9996] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
+      <div class="bg-gradient-to-r from-cyan-600 to-blue-700 p-4 text-white flex justify-between items-center">
+        <h3 class="text-sm font-bold flex items-center gap-2">
+          <i class="fa-solid fa-plus-circle"></i>
+          <span>เพิ่มห้องประชุมใหม่</span>
+        </h3>
+        <button type="button" onclick="closeAddRoomModal()" class="text-white/80 hover:text-white p-1 cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form onsubmit="handleAddRoomSubmit(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ชื่อห้องประชุม <span class="text-red-500">*</span></label>
+          <input type="text" id="addRoomName" required placeholder="เช่น ห้องประชุมชั้น 7 (ห้องผู้บริหาร)" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ชั้น / สถานที่ตั้ง <span class="text-red-500">*</span></label>
+          <input type="text" id="addRoomLocation" required placeholder="เช่น ชั้น 5, ชั้น 6, ชั้น 7" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">โทนสีประจำห้อง (สำหรับแถบสีบนปฏิทิน)</label>
+          <div class="flex items-center gap-3">
+            <input type="color" id="addRoomColorPicker" value="#0284c7" class="w-10 h-10 p-0.5 rounded-xl border border-slate-300 cursor-pointer" oninput="document.getElementById('addRoomColor').value = this.value">
+            <input type="text" id="addRoomColor" value="#0284c7" required class="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl font-mono text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none" oninput="document.getElementById('addRoomColorPicker').value = this.value">
+          </div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-[10px] text-slate-400">สียอดนิยม:</span>
+            <button type="button" onclick="setAddRoomColor('#0284c7')" class="w-5 h-5 rounded-full bg-[#0284c7] hover:scale-110 transition shadow-2xs cursor-pointer" title="ฟ้า"></button>
+            <button type="button" onclick="setAddRoomColor('#059669')" class="w-5 h-5 rounded-full bg-[#059669] hover:scale-110 transition shadow-2xs cursor-pointer" title="เขียว"></button>
+            <button type="button" onclick="setAddRoomColor('#7c3aed')" class="w-5 h-5 rounded-full bg-[#7c3aed] hover:scale-110 transition shadow-2xs cursor-pointer" title="ม่วง"></button>
+            <button type="button" onclick="setAddRoomColor('#ea580c')" class="w-5 h-5 rounded-full bg-[#ea580c] hover:scale-110 transition shadow-2xs cursor-pointer" title="ส้ม"></button>
+            <button type="button" onclick="setAddRoomColor('#db2777')" class="w-5 h-5 rounded-full bg-[#db2777] hover:scale-110 transition shadow-2xs cursor-pointer" title="ชมพู"></button>
+            <button type="button" onclick="setAddRoomColor('#4f46e5')" class="w-5 h-5 rounded-full bg-[#4f46e5] hover:scale-110 transition shadow-2xs cursor-pointer" title="คราม"></button>
+            <button type="button" onclick="setAddRoomColor('#0d9488')" class="w-5 h-5 rounded-full bg-[#0d9488] hover:scale-110 transition shadow-2xs cursor-pointer" title="เขียวน้ำทะเล"></button>
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">สถานะห้องประชุม</label>
+          <select id="addRoomStatus" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:outline-none font-bold">
+            <option value="พร้อมใช้งาน" selected>พร้อมใช้งาน</option>
+            <option value="ปิดปรับปรุง">ปิดปรับปรุงชั่วคราว</option>
+          </select>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeAddRoomModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition cursor-pointer">ยกเลิก</button>
+          <button type="submit" id="addRoomSubmitBtn" class="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-check"></i>
+            <span>เพิ่มห้องประชุม</span>
+          </button>
         </div>
       </form>
     </div>
@@ -1896,15 +1981,17 @@
           },
           adminUpdateRoomStatus: async function(passcode, roomId, newStatus) {
             try {
-              await fetch(`${SUPABASE_URL}/rest/v1/meeting_rooms?room_id=eq.${roomId}`, {
-                method: 'PATCH',
-                headers: {
-                  'apikey': SUPABASE_KEY,
-                  'Authorization': `Bearer ${SUPABASE_KEY}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ is_active: (newStatus === 'พร้อมใช้งาน') })
-              });
+              try {
+                await fetch(`${SUPABASE_URL}/rest/v1/meeting_rooms?id=eq.${roomId}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ is_active: (newStatus === 'พร้อมใช้งาน') })
+                });
+              } catch (e) {}
               try {
                 fetch(GAS_URL, {
                   method: 'POST',
@@ -1918,17 +2005,90 @@
               if (this._failure) this._failure(err);
             }
           },
-          adminUpdateRoomDetails: async function(passcode, roomId, capacity, facilities, color) {
+          adminUpdateRoomDetails: async function(passcode, roomId, name, location, color, status) {
             try {
+              try {
+                const patchBody = {};
+                if (name) patchBody.name = name;
+                if (location) patchBody.floor = location;
+                if (color) patchBody.color = color;
+                if (status) patchBody.is_active = (status === 'พร้อมใช้งาน');
+                await fetch(`${SUPABASE_URL}/rest/v1/meeting_rooms?id=eq.${roomId}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(patchBody)
+                });
+              } catch (e) {}
               try {
                 fetch(GAS_URL, {
                   method: 'POST',
                   mode: 'no-cors',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ action: 'adminUpdateRoomDetails', passcode, roomId, capacity, facilities, color })
+                  body: JSON.stringify({ action: 'adminUpdateRoomDetails', passcode, roomId, name, location, color, status })
                 });
               } catch (e) {}
               if (this._success) this._success({ success: true, message: 'บันทึกข้อมูลห้องประชุมเรียบร้อยแล้ว' });
+            } catch (err) {
+              if (this._failure) this._failure(err);
+            }
+          },
+          adminAddRoom: async function(passcode, roomData) {
+            try {
+              try {
+                await fetch(`${SUPABASE_URL}/rest/v1/meeting_rooms`, {
+                  method: 'POST',
+                  headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                  },
+                  body: JSON.stringify({
+                    id: roomData.id,
+                    name: roomData.name,
+                    floor: roomData.location,
+                    color: roomData.color,
+                    is_active: (roomData.status === 'พร้อมใช้งาน')
+                  })
+                });
+              } catch (e) {}
+              try {
+                fetch(GAS_URL, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'adminAddRoom', passcode, roomData })
+                });
+              } catch (e) {}
+              if (this._success) this._success({ success: true, message: `เพิ่มห้องประชุม "${roomData.name}" เรียบร้อยแล้ว`, room: roomData });
+            } catch (err) {
+              if (this._failure) this._failure(err);
+            }
+          },
+          adminDeleteRoom: async function(passcode, roomId) {
+            try {
+              try {
+                await fetch(`${SUPABASE_URL}/rest/v1/meeting_rooms?id=eq.${roomId}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                  }
+                });
+              } catch (e) {}
+              try {
+                fetch(GAS_URL, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'adminDeleteRoom', passcode, roomId })
+                });
+              } catch (e) {}
+              if (this._success) this._success({ success: true, message: 'ลบห้องประชุมเรียบร้อยแล้ว' });
             } catch (err) {
               if (this._failure) this._failure(err);
             }
@@ -2780,6 +2940,7 @@
         renderCalendar();
         selectDate(selectedDateStr);
         loadOverviewData();
+        loadRooms();
         loadEmployees();
         if (appEmployeesList.length === 0) { loadEmployees(); } else { renderAdminEmployeesTable(); }
       } catch (err) {
@@ -2891,17 +3052,10 @@
      */
     function getRoomBadgeStyle(roomName) {
       const r = String(roomName || '');
-      if (r.includes('ใหญ่')) {
-        return {
-          bar: 'border-l-sky-600',
-          bg: 'bg-sky-50/95 hover:bg-sky-100',
-          border: 'border-sky-300',
-          text: 'text-sky-950',
-          timeBg: 'bg-sky-600 text-white',
-          badgeBg: 'bg-sky-100 text-sky-900 border-sky-300',
-          dot: 'bg-sky-600'
-        };
-      } else if (r.includes('ม่าน')) {
+      const matched = defaultRoomsList.find(it => it.name === r || r.includes(it.name) || (it.name && it.name.includes(r)));
+      const hex = (matched && matched.color) ? matched.color.toLowerCase() : '';
+
+      if (hex.includes('059669') || hex.includes('10b981') || r.includes('ม่าน')) {
         return {
           bar: 'border-l-emerald-600',
           bg: 'bg-emerald-50/95 hover:bg-emerald-100',
@@ -2911,7 +3065,7 @@
           badgeBg: 'bg-emerald-100 text-emerald-900 border-emerald-300',
           dot: 'bg-emerald-600'
         };
-      } else if (r.includes('กระจก')) {
+      } else if (hex.includes('7c3aed') || hex.includes('8b5cf6') || r.includes('กระจก')) {
         return {
           bar: 'border-l-purple-600',
           bg: 'bg-purple-50/95 hover:bg-purple-100',
@@ -2921,7 +3075,7 @@
           badgeBg: 'bg-purple-100 text-purple-900 border-purple-300',
           dot: 'bg-purple-600'
         };
-      } else if (r.includes('ชั้น 6')) {
+      } else if (hex.includes('ea580c') || hex.includes('f97316') || r.includes('ชั้น 6')) {
         return {
           bar: 'border-l-amber-600',
           bg: 'bg-amber-50/95 hover:bg-amber-100',
@@ -2931,7 +3085,7 @@
           badgeBg: 'bg-amber-100 text-amber-950 border-amber-300',
           dot: 'bg-amber-600'
         };
-      } else {
+      } else if (hex.includes('db2777') || hex.includes('ec4899') || r.includes('VIP')) {
         return {
           bar: 'border-l-rose-600',
           bg: 'bg-rose-50/95 hover:bg-rose-100',
@@ -2940,6 +3094,36 @@
           timeBg: 'bg-rose-600 text-white',
           badgeBg: 'bg-rose-100 text-rose-900 border-rose-300',
           dot: 'bg-rose-600'
+        };
+      } else if (hex.includes('4f46e5') || hex.includes('6366f1')) {
+        return {
+          bar: 'border-l-indigo-600',
+          bg: 'bg-indigo-50/95 hover:bg-indigo-100',
+          border: 'border-indigo-300',
+          text: 'text-indigo-950',
+          timeBg: 'bg-indigo-600 text-white',
+          badgeBg: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+          dot: 'bg-indigo-600'
+        };
+      } else if (hex.includes('0d9488') || hex.includes('14b8a6')) {
+        return {
+          bar: 'border-l-teal-600',
+          bg: 'bg-teal-50/95 hover:bg-teal-100',
+          border: 'border-teal-300',
+          text: 'text-teal-950',
+          timeBg: 'bg-teal-600 text-white',
+          badgeBg: 'bg-teal-100 text-teal-900 border-teal-300',
+          dot: 'bg-teal-600'
+        };
+      } else {
+        return {
+          bar: 'border-l-sky-600',
+          bg: 'bg-sky-50/95 hover:bg-sky-100',
+          border: 'border-sky-300',
+          text: 'text-sky-950',
+          timeBg: 'bg-sky-600 text-white',
+          badgeBg: 'bg-sky-100 text-sky-900 border-sky-300',
+          dot: 'bg-sky-600'
         };
       }
     }
@@ -3883,7 +4067,7 @@
 
     function renderAdminRooms() {
       const grid = document.getElementById('adminRoomsGrid');
-      const mbContainer = document.getElementById('mbAdminRoomsContainer');
+      const mbContainer = document.getElementById('mbAdminRoomsList') || document.getElementById('mbAdminRoomsContainer');
 
       const renderRoomsHtml = (target) => {
         if (!target) return;
@@ -3891,13 +4075,16 @@
         defaultRoomsList.forEach(r => {
           const isAvailable = r.status === 'พร้อมใช้งาน';
           const card = document.createElement('div');
-          card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3';
+          card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 hover:shadow-md transition';
           card.innerHTML = `
             <div class="flex justify-between items-start">
               <div>
-                <span class="text-[10px] font-bold font-mono text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md">${r.id}</span>
-                <h4 class="font-bold text-slate-900 text-sm mt-1">${r.name}</h4>
-                <div class="text-xs text-slate-500 mt-0.5">${r.location} • ความจุ ${r.capacity}</div>
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <span class="text-[10px] font-bold font-mono text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md border border-cyan-100">${r.id}</span>
+                  <span class="w-2.5 h-2.5 rounded-full border border-black/10 inline-block shadow-2xs" style="background-color: ${r.color || '#0284c7'}" title="สีประจำห้อง: ${r.color || '#0284c7'}"></span>
+                </div>
+                <h4 class="font-bold text-slate-900 text-sm">${r.name}</h4>
+                <div class="text-xs text-slate-500 mt-0.5">${r.location || r.floor || 'ชั้น 5'}</div>
               </div>
               <div class="text-right">
                 <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isAvailable ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}">
@@ -3905,16 +4092,18 @@
                 </span>
               </div>
             </div>
-            <div class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-              <span class="font-bold text-slate-700">อุปกรณ์ประจำห้อง:</span> ${r.facilities}
-            </div>
-            <div class="pt-2 border-t border-slate-100 flex justify-between items-center">
-              <button type="button" onclick="adminToggleRoomStatus('${r.id}', '${r.status}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${isAvailable ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'}">
+            <div class="pt-2 border-t border-slate-100 flex justify-between items-center gap-2">
+              <button type="button" onclick="adminToggleRoomStatus('${r.id}', '${r.status}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${isAvailable ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'}">
                 <i class="fa-solid fa-power-off mr-1"></i> ${isAvailable ? 'ปิดปรับปรุง' : 'เปิดใช้งาน'}
               </button>
-              <button type="button" onclick="openEditRoomModal('${r.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-                <i class="fa-solid fa-pen-to-square mr-1"></i> แก้ไขข้อมูล
-              </button>
+              <div class="flex items-center gap-1.5">
+                <button type="button" onclick="openEditRoomModal('${r.id}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
+                  <i class="fa-solid fa-pen-to-square mr-1"></i> แก้ไขข้อมูล
+                </button>
+                <button type="button" onclick="adminDeleteRoomConfirm('${r.id}', '${r.name}')" class="p-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" title="ลบห้องประชุม">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
             </div>
           `;
           target.appendChild(card);
@@ -3923,6 +4112,7 @@
 
       renderRoomsHtml(grid);
       renderRoomsHtml(mbContainer);
+      updateRoomSelectOptions();
     }
 
     function adminApproveBooking(id) {
@@ -3994,8 +4184,10 @@
       if (!r) return;
       document.getElementById('editRoomId').value = r.id;
       document.getElementById('editRoomName').value = r.name;
-      document.getElementById('editRoomCapacity').value = r.capacity;
-      document.getElementById('editRoomFacilities').value = r.facilities;
+      document.getElementById('editRoomLocation').value = r.location || r.floor || 'ชั้น 5';
+      const colorVal = r.color || '#0284c7';
+      document.getElementById('editRoomColor').value = colorVal;
+      document.getElementById('editRoomColorPicker').value = colorVal;
       document.getElementById('editRoomStatus').value = r.status || 'พร้อมใช้งาน';
       const m = document.getElementById('editRoomModal');
       if (m) m.classList.remove('hidden');
@@ -4009,21 +4201,181 @@
     function handleEditRoomSubmit(e) {
       e.preventDefault();
       const rId = document.getElementById('editRoomId').value;
-      const cap = document.getElementById('editRoomCapacity').value;
-      const fac = document.getElementById('editRoomFacilities').value;
+      const name = document.getElementById('editRoomName').value.trim();
+      const location = document.getElementById('editRoomLocation').value.trim();
+      const color = document.getElementById('editRoomColor').value.trim() || '#0284c7';
       const st = document.getElementById('editRoomStatus').value;
 
-      if (google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(res => {
-            showToast('บันทึกข้อมูลห้องประชุมเรียบร้อยแล้ว', 'success');
-            const r = defaultRoomsList.find(it => it.id === rId);
-            if (r) { r.capacity = cap; r.facilities = fac; r.status = st; }
-            closeEditRoomModal();
+      const runner = (typeof google !== 'undefined' && google.script && google.script.run) ? google.script.run : clientBridge;
+      runner
+        .withSuccessHandler(res => {
+          showToast('บันทึกข้อมูลห้องประชุมเรียบร้อยแล้ว', 'success');
+          const r = defaultRoomsList.find(it => it.id === rId);
+          if (r) {
+            r.name = name;
+            r.location = location;
+            r.floor = location;
+            r.color = color;
+            r.status = st;
+          }
+          closeEditRoomModal();
+          renderAdminRooms();
+          renderCalendar();
+        })
+        .withFailureHandler(err => showToast(err.toString(), 'error'))
+        .adminUpdateRoomDetails('1234', rId, name, location, color, st);
+    }
+
+    // ==============================================================
+    // 🚪 ADD NEW ROOM ENGINE
+    // ==============================================================
+    function openAddRoomModal() {
+      document.getElementById('addRoomName').value = '';
+      document.getElementById('addRoomLocation').value = '';
+      document.getElementById('addRoomColor').value = '#0284c7';
+      document.getElementById('addRoomColorPicker').value = '#0284c7';
+      document.getElementById('addRoomStatus').value = 'พร้อมใช้งาน';
+      const m = document.getElementById('addRoomModal');
+      if (m) m.classList.remove('hidden');
+    }
+
+    function closeAddRoomModal() {
+      const m = document.getElementById('addRoomModal');
+      if (m) m.classList.add('hidden');
+    }
+
+    function setAddRoomColor(hex) {
+      document.getElementById('addRoomColor').value = hex;
+      document.getElementById('addRoomColorPicker').value = hex;
+    }
+
+    function handleAddRoomSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('addRoomName').value.trim();
+      const location = document.getElementById('addRoomLocation').value.trim();
+      const color = document.getElementById('addRoomColor').value.trim() || '#0284c7';
+      const status = document.getElementById('addRoomStatus').value;
+
+      if (!name || !location) {
+        showToast('กรุณากรอกชื่อห้องและชั้น/สถานที่ให้ครบถ้วน', 'warning');
+        return;
+      }
+
+      // Generate RM ID
+      let nextNum = defaultRoomsList.length + 1;
+      let newId = 'RM-' + String(nextNum).padStart(3, '0');
+      while (defaultRoomsList.some(r => r.id === newId)) {
+        nextNum++;
+        newId = 'RM-' + String(nextNum).padStart(3, '0');
+      }
+
+      const roomData = {
+        id: newId,
+        name: name,
+        location: location,
+        floor: location,
+        color: color,
+        status: status
+      };
+
+      const runner = (typeof google !== 'undefined' && google.script && google.script.run) ? google.script.run : clientBridge;
+      runner
+        .withSuccessHandler(res => {
+          showToast(res.message || `เพิ่มห้องประชุม "${name}" สำเร็จ`, 'success');
+          defaultRoomsList.push(roomData);
+          closeAddRoomModal();
+          renderAdminRooms();
+          renderCalendar();
+        })
+        .withFailureHandler(err => showToast(err.toString(), 'error'))
+        .adminAddRoom('1234', roomData);
+    }
+
+    function adminDeleteRoomConfirm(roomId, roomName) {
+      if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบห้อง "${roomName}" (${roomId}) ออกจากระบบ?`)) return;
+      const runner = (typeof google !== 'undefined' && google.script && google.script.run) ? google.script.run : clientBridge;
+      runner
+        .withSuccessHandler(res => {
+          showToast(res.message || 'ลบห้องประชุมเรียบร้อยแล้ว', 'success');
+          defaultRoomsList = defaultRoomsList.filter(r => r.id !== roomId);
+          renderAdminRooms();
+          renderCalendar();
+        })
+        .withFailureHandler(err => showToast(err.toString(), 'error'))
+        .adminDeleteRoom('1234', roomId);
+    }
+
+    function updateRoomSelectOptions() {
+      const selects = [
+        document.getElementById('formRoomSelect'),
+        document.getElementById('mbFormRoomSelect')
+      ];
+
+      selects.forEach(sel => {
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '';
+        defaultRoomsList.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.name;
+          opt.textContent = `${r.name} (${r.location || r.floor || ''})`;
+          if (r.status === 'ปิดปรับปรุง') {
+            opt.textContent += ' [ปิดปรับปรุง]';
+            opt.disabled = true;
+          }
+          sel.appendChild(opt);
+        });
+        if (currentVal && Array.from(sel.options).some(o => o.value === currentVal && !o.disabled)) {
+          sel.value = currentVal;
+        }
+      });
+
+      // Filter select in overview
+      const dtFilter = document.getElementById('dtFilterRoomSelect');
+      if (dtFilter) {
+        const curFilter = dtFilter.value;
+        dtFilter.innerHTML = `<option value="">ทุกห้องประชุม (${defaultRoomsList.length} ห้อง)</option>`;
+        defaultRoomsList.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.name;
+          opt.textContent = r.name;
+          dtFilter.appendChild(opt);
+        });
+        if (curFilter) dtFilter.value = curFilter;
+      }
+
+      // Update Admin tab badge & subtitle
+      const tabBtn = document.getElementById('adminSubTabRoomsBtn');
+      if (tabBtn) tabBtn.textContent = `ข้อมูลห้องประชุม (${defaultRoomsList.length} ห้อง)`;
+      const subTitle = document.getElementById('adminRoomsSubtitle');
+      if (subTitle) subTitle.textContent = `ทั้งหมด ${defaultRoomsList.length} ห้องประชุมในระบบ`;
+    }
+
+    async function loadRooms() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/meeting_rooms?order=id.asc`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            defaultRoomsList = data.map((r, idx) => ({
+              id: r.id.startsWith('RM-') ? r.id : ('RM-' + String(idx + 1).padStart(3, '0')),
+              name: r.name,
+              location: r.floor || 'ชั้น 5',
+              floor: r.floor || 'ชั้น 5',
+              color: r.color || '#0284c7',
+              status: (r.is_active === false || r.is_active === 'false') ? 'ปิดปรับปรุง' : 'พร้อมใช้งาน'
+            }));
             renderAdminRooms();
-          })
-          .withFailureHandler(err => showToast(err.toString(), 'error'))
-          .adminUpdateRoomDetails('1234', rId, cap, fac, '#0284c7');
+            renderCalendar();
+          }
+        }
+      } catch (err) {
+        console.warn('loadRooms error:', err);
       }
     }
 
