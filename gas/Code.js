@@ -35,13 +35,14 @@ function doGet(e) {
     const res = setupDaily8amTrigger();
     return createJsonResponse(res);
   }
+  if (action === 'clearAllBookings') {
+    const res = adminClearAllBookings(e.parameter.passcode || '1234');
+    return createJsonResponse(res);
+  }
 
   const mode = (e && e.parameter && (e.parameter.mode === 'admin' || e.parameter.page === 'admin')) ? 'admin' : 'user';
 
-  const template = HtmlService.createTemplateFromFile('Index');
-  template.pageMode = mode;
-
-  return template.evaluate()
+  return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle(mode === 'admin' ? 'ผู้ดูแลระบบ - จองห้องประชุม PPCH' : 'ระบบจองห้องประชุม - โรงพยาบาลพิษณุเวช พิจิตร')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
@@ -112,6 +113,10 @@ function doPost(e) {
     }
     if (contents.action === 'setupDaily8amTrigger') {
       const res = setupDaily8amTrigger();
+      return createJsonResponse(res);
+    }
+    if (contents.action === 'adminClearAllBookings') {
+      const res = adminClearAllBookings(contents.passcode || '1234');
       return createJsonResponse(res);
     }
 
@@ -2034,4 +2039,38 @@ function setupDaily8amTrigger() {
 
   Logger.log('Setup daily 08:00 AM trigger successfully!');
   return { success: true, message: 'ติดตั้งระบบแจ้งเตือนอัตโนมัติทุกวันเวลา 08:00 น. เรียบร้อยแล้ว' };
+}
+
+/**
+ * ลบข้อมูลการจองทั้งหมด (ทั้ง Google Sheets และ Supabase)
+ */
+function adminClearAllBookings(passcode) {
+  const settings = getSettingsDict();
+  const configPass = String(settings.ADMIN_PASSCODE || '1234').trim();
+  if (String(passcode || '').trim() !== configPass) {
+    return { success: false, message: 'รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง' };
+  }
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('Bookings');
+  let clearedRows = 0;
+  if (sheet && sheet.getLastRow() > 1) {
+    clearedRows = sheet.getLastRow() - 1;
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clearContent();
+  }
+  // Clear Supabase room_bookings
+  try {
+    const supabaseUrl = 'https://jauxlzjmhtnncrwrloyr.supabase.co';
+    const supabaseKey = SUPABASE_ANON_KEY;
+    UrlFetchApp.fetch(supabaseUrl + '/rest/v1/room_bookings?id=not.is.null', {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': 'Bearer ' + supabaseKey
+      },
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    Logger.log('Supabase clear error: ' + e);
+  }
+  return { success: true, count: clearedRows, message: 'ลบข้อมูลการจองจำลองทั้งหมดเรียบร้อยแล้ว (' + clearedRows + ' รายการ)' };
 }
