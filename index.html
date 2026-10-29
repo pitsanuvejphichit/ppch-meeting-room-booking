@@ -3039,6 +3039,11 @@
         loadRooms();
         loadEmployees();
         if (appEmployeesList.length === 0) { loadEmployees(); } else { renderAdminEmployeesTable(); }
+
+        // 🔄 Real-time Auto-Sync: ดึงข้อมูลการจองล่าสุดจาก Supabase อัตโนมัติทุก 5 วินาที
+        setInterval(() => {
+          loadOverviewData();
+        }, 5000);
       } catch (err) {
         console.error('Initialization error:', err);
         const loader = document.getElementById('loading');
@@ -3501,43 +3506,36 @@
     }
 
     function loadOverviewData() {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(res => {
-            if (res && res.success && res.bookings) {
-              const fetchedMap = new Map();
-              res.bookings.forEach(b => {
-                const key = `${b.roomName}_${b.bookingDate}_${b.startTime}`;
-                fetchedMap.set(key, b);
-              });
-              const localPending = (overviewBookings || []).filter(b => {
-                const key = `${b.roomName}_${b.bookingDate}_${b.startTime}`;
-                return !fetchedMap.has(key) && !(b.status === 'ยกเลิก' || b.status === 'ปฏิเสธ');
-              });
-              overviewBookings = [...localPending, ...res.bookings];
-              renderOverview();
-              renderCalendar();
-            }
-            initialOverviewLoaded = true;
-            checkInitialLoadingComplete();
-          })
-          .withFailureHandler(err => {
-            console.error('loadOverviewData failure:', err);
+      const runner = (typeof google !== 'undefined' && google.script && google.script.run) ? google.script.run : clientBridge;
+      runner
+        .withSuccessHandler(res => {
+          if (res && res.success && res.bookings) {
+            const fetchedMap = new Map();
+            res.bookings.forEach(b => {
+              const bDate = b.bookingDate || b.booking_date;
+              const key = `${b.roomName}_${bDate}_${b.startTime}`;
+              fetchedMap.set(key, b);
+            });
+            const localPending = (overviewBookings || []).filter(b => {
+              const bDate = b.bookingDate || b.booking_date;
+              const key = `${b.roomName}_${bDate}_${b.startTime}`;
+              return !fetchedMap.has(key) && !(b.status === 'ยกเลิก' || b.status === 'ปฏิเสธ');
+            });
+            overviewBookings = [...localPending, ...res.bookings];
             renderOverview();
             renderCalendar();
-            initialOverviewLoaded = true;
-            checkInitialLoadingComplete();
-          })
-          .getOverviewData(overviewPeriod, calYear, calMonth);
-      } else {
-        // Fallback for standalone / GitHub Pages
-        setTimeout(() => {
+          }
+          initialOverviewLoaded = true;
+          checkInitialLoadingComplete();
+        })
+        .withFailureHandler(err => {
+          console.error('loadOverviewData failure:', err);
           renderOverview();
           renderCalendar();
           initialOverviewLoaded = true;
           checkInitialLoadingComplete();
-        }, 300);
-      }
+        })
+        .getOverviewData(overviewPeriod, calYear, calMonth);
     }
 
     let filteredOverviewBookings = [];
