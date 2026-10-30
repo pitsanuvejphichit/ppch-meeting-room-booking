@@ -624,7 +624,7 @@ function submitBooking(data) {
         booking_date: item.bookingDate,
         start_time: item.startTime,
         end_time: item.endTime,
-        emp_id: data.emp_id || '000000',
+        emp_id: String(data.emp_id || data.empId || '000000').trim().padStart(6, '0'),
         requester_name: bookedBy,
         department: department,
         topic: purpose,

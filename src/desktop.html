@@ -923,7 +923,7 @@
               </div>
             </div>
 
-            <div class="overflow-x-auto max-h-[580px] overflow-y-auto custom-scrollbar">
+            <div class="overflow-x-auto">
               <table class="w-full text-left text-xs border-collapse">
                 <thead class="bg-slate-100/80 text-slate-600 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider sticky top-0 bg-slate-100 z-10">
                   <tr>
@@ -1465,7 +1465,7 @@
         <p class="text-xs text-slate-500 mt-1">กรุณากรอกรหัสผ่าน Admin เพื่อจัดการระบบ</p>
       </div>
       <div class="space-y-3">
-        <input type="password" id="adminPasscodeInput" maxlength="10" placeholder="รหัสผ่าน (ค่าเริ่มต้น 1234)" class="w-full text-center tracking-widest text-lg font-bold px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:bg-white focus:outline-none">
+        <input type="password" id="adminPasscodeInput" maxlength="10" placeholder="รหัสผ่าน (ค่าเริ่มต้น 1234)" onkeyup="if(event.key==='Enter') verifyAdminPasscode()" class="w-full text-center tracking-widest text-lg font-bold px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:bg-white focus:outline-none">
         <div id="passcodeError" class="hidden text-xs text-rose-600 font-bold">รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง</div>
       </div>
       <div class="flex gap-2">
@@ -1924,13 +1924,13 @@
                     booking_date: item.bookingDate,
                     start_time: sTime.length === 5 ? sTime + ':00' : sTime,
                     end_time: eTime.length === 5 ? eTime + ':00' : eTime,
-                    emp_id: payload.empId || '000000',
-                    requester_name: payload.bookedBy || payload.purpose || '-',
-                    booked_by: payload.bookedBy || payload.purpose || '-',
+                    emp_id: String(payload.empId || payload.emp_id || '000000').trim().padStart(6, '0'),
+                    requester_name: payload.bookedBy || '-',
+                    booked_by: payload.bookedBy || '-',
                     department: payload.department || '-',
                     phone: payload.phone || '-',
-                    topic: payload.purpose || payload.bookedBy || '-',
-                    purpose: payload.purpose || payload.bookedBy || '-',
+                    topic: payload.purpose || '-',
+                    purpose: payload.purpose || '-',
                     meeting_type: payload.meetingType || 'ภายใน',
                     attendees_count: parseInt(payload.attendees) || 1,
                     attendees: parseInt(payload.attendees) || 1,
@@ -3757,7 +3757,7 @@
           <table border="1">
             <thead>
               <tr style="background-color:#0284c7;color:#ffffff;font-weight:bold;">
-                <th>รหัสการจอง</th><th>วันที่</th><th>เวลาเริ่มต้น</th><th>เวลาสิ้นสุด</th>
+                <th>รหัสการจอง</th><th>รหัสพนักงาน</th><th>วันที่</th><th>เวลาเริ่มต้น</th><th>เวลาสิ้นสุด</th>
                 <th>ห้องประชุม</th><th>ผู้ขอใช้ห้อง</th><th>แผนก/ฝ่าย</th><th>เบอร์โทรศัพท์</th>
                 <th>วัตถุประสงค์</th><th>ประเภทการประชุม</th><th>จำนวนผู้เข้าร่วม</th>
                 <th>รูปแบบผังห้อง</th><th>อุปกรณ์</th><th>สถานะ</th>
@@ -3768,7 +3768,7 @@
       bookingsToExport.forEach(b => {
         tableHtml += `
           <tr>
-            <td>${b.id || b.bookingId}</td><td>${b.bookingDate}</td><td>${b.startTime}</td><td>${b.endTime}</td>
+            <td>${b.id || b.bookingId}</td><td style="mso-number-format:'\@';">${String(b.empId || b.emp_id || '000000').padStart(6, '0')}</td><td>${b.bookingDate}</td><td>${b.startTime}</td><td>${b.endTime}</td>
             <td>${b.roomName}</td><td>${b.bookedBy}</td><td>${b.department}</td><td style="mso-number-format:'\\@';">${b.phone || '-'}</td>
             <td>${b.purpose}</td><td>${b.meetingType || 'ภายใน'}</td><td>${b.attendees}</td>
             <td>${b.seatingLayout || 'Classroom'}</td><td>${b.equipment || '-'}</td><td>${b.status}</td>
@@ -3797,12 +3797,13 @@
         return;
       }
 
-      const headers = ['Booking ID', 'Booking Date', 'Start Time', 'End Time', 'Room Name', 'Booked By', 'Department', 'Phone', 'Purpose', 'Meeting Type', 'Attendees', 'Seating Layout', 'Equipment', 'Status'];
+      const headers = ['Booking ID', 'Employee ID', 'Booking Date', 'Start Time', 'End Time', 'Room Name', 'Booked By', 'Department', 'Phone', 'Purpose', 'Meeting Type', 'Attendees', 'Seating Layout', 'Equipment', 'Status'];
       let csvContent = headers.join(',') + '\n';
 
       bookingsToExport.forEach(b => {
         const row = [
           `"${b.id || b.bookingId || ''}"`,
+          `"${String(b.empId || b.emp_id || '000000').padStart(6, '0')}"`,
           `"${b.bookingDate || ''}"`,
           `"${b.startTime || ''}"`,
           `"${b.endTime || ''}"`,
@@ -3874,7 +3875,6 @@
     function closeBookingSlipModal() {
       const modal = document.getElementById('bookingSlipModal');
       if (modal) modal.classList.add('hidden');
-      backToCalendar();
     }
 
     function printBookingSlip() {
@@ -3983,6 +3983,7 @@
       const input = document.getElementById('adminPasscodeInput');
       const val = input ? input.value.trim() : '';
       if (val === '1234' || val === adminPasscode) {
+        adminPasscode = val;
         isAdminAuthenticated = true;
         closePasscodeModal();
         if (appMode === 'desktop') {
@@ -4380,6 +4381,7 @@
           closeAddRoomModal();
           renderAdminRooms();
           renderCalendar();
+          updateRoomSelectOptions();
         })
         .withFailureHandler(err => showToast(err.toString(), 'error'))
         .adminAddRoom('1234', roomData);
@@ -4394,6 +4396,7 @@
           defaultRoomsList = defaultRoomsList.filter(r => r.id !== roomId);
           renderAdminRooms();
           renderCalendar();
+          updateRoomSelectOptions();
         })
         .withFailureHandler(err => showToast(err.toString(), 'error'))
         .adminDeleteRoom('1234', roomId);
@@ -4466,6 +4469,7 @@
             }));
             renderAdminRooms();
             renderCalendar();
+            updateRoomSelectOptions();
           }
         }
       } catch (err) {
@@ -5184,6 +5188,42 @@
       let matchedBooking = null;
       let timeErrorText = '';
 
+      // 1. ตรวจสอบเวลาชนกันเองภายในฟอร์มเดียวกัน
+      for (let i = 0; i < itemsToCheck.length; i++) {
+        const sMin_i = timeToMinutes(itemsToCheck[i].st);
+        const eMin_i = timeToMinutes(itemsToCheck[i].et);
+        for (let j = i + 1; j < itemsToCheck.length; j++) {
+          if (itemsToCheck[i].date === itemsToCheck[j].date) {
+            const sMin_j = timeToMinutes(itemsToCheck[j].st);
+            const eMin_j = timeToMinutes(itemsToCheck[j].et);
+            if (sMin_i < eMin_j && eMin_i > sMin_j) {
+              conflictingItem = itemsToCheck[j];
+              timeErrorText = `ช่วงเวลาแถวที่ ${i + 1} และแถวที่ ${j + 1} ชนกันเอง (${itemsToCheck[i].date}: ${itemsToCheck[i].st}-${itemsToCheck[i].et} กับ ${itemsToCheck[j].st}-${itemsToCheck[j].et})`;
+              break;
+            }
+          }
+        }
+        if (timeErrorText) break;
+      }
+
+      // 1. ตรวจสอบเวลาชนกันเองภายในฟอร์มเดียวกัน (Mobile)
+      for (let i = 0; i < itemsToCheck.length; i++) {
+        const sMin_i = timeToMinutes(itemsToCheck[i].st);
+        const eMin_i = timeToMinutes(itemsToCheck[i].et);
+        for (let j = i + 1; j < itemsToCheck.length; j++) {
+          if (itemsToCheck[i].date === itemsToCheck[j].date) {
+            const sMin_j = timeToMinutes(itemsToCheck[j].st);
+            const eMin_j = timeToMinutes(itemsToCheck[j].et);
+            if (sMin_i < eMin_j && eMin_i > sMin_j) {
+              conflictingItem = itemsToCheck[j];
+              timeErrorText = `ช่วงเวลาแถวที่ ${i + 1} และแถวที่ ${j + 1} ชนกันเอง (${itemsToCheck[i].date}: ${itemsToCheck[i].st}-${itemsToCheck[i].et} กับ ${itemsToCheck[j].st}-${itemsToCheck[j].et})`;
+              break;
+            }
+          }
+        }
+        if (timeErrorText) break;
+      }
+
       const allBookings = (appData.bookings || []).concat(overviewBookings || []);
 
       for (let i = 0; i < itemsToCheck.length; i++) {
@@ -5261,7 +5301,16 @@
       }
 
       const formEmpInput = document.getElementById('formEmpId');
-      const formEmpVal = formEmpInput && formEmpInput.value ? formEmpInput.value.trim().padStart(6, '0') : '000000';
+      let formEmpVal = formEmpInput && formEmpInput.value ? formEmpInput.value.trim().padStart(6, '0') : '';
+      if (!formEmpVal || formEmpVal === '000000') {
+        const typed = (document.getElementById('formBookedBy')?.value || '').trim();
+        const found = (appEmployeesList || []).find(e => e.emp_id === typed.padStart(6, '0') || e.full_name === typed || `${e.prefix || ''}${e.first_name} ${e.last_name}`.trim() === typed);
+        if (found) {
+          formEmpVal = found.emp_id;
+        } else {
+          formEmpVal = formEmpVal || '000000';
+        }
+      }
       const payload = {
         roomName: roomName,
         items: items,
@@ -5660,6 +5709,42 @@
       let matchedBooking = null;
       let timeErrorText = '';
 
+      // 1. ตรวจสอบเวลาชนกันเองภายในฟอร์มเดียวกัน
+      for (let i = 0; i < itemsToCheck.length; i++) {
+        const sMin_i = timeToMinutes(itemsToCheck[i].st);
+        const eMin_i = timeToMinutes(itemsToCheck[i].et);
+        for (let j = i + 1; j < itemsToCheck.length; j++) {
+          if (itemsToCheck[i].date === itemsToCheck[j].date) {
+            const sMin_j = timeToMinutes(itemsToCheck[j].st);
+            const eMin_j = timeToMinutes(itemsToCheck[j].et);
+            if (sMin_i < eMin_j && eMin_i > sMin_j) {
+              conflictingItem = itemsToCheck[j];
+              timeErrorText = `ช่วงเวลาแถวที่ ${i + 1} และแถวที่ ${j + 1} ชนกันเอง (${itemsToCheck[i].date}: ${itemsToCheck[i].st}-${itemsToCheck[i].et} กับ ${itemsToCheck[j].st}-${itemsToCheck[j].et})`;
+              break;
+            }
+          }
+        }
+        if (timeErrorText) break;
+      }
+
+      // 1. ตรวจสอบเวลาชนกันเองภายในฟอร์มเดียวกัน (Mobile)
+      for (let i = 0; i < itemsToCheck.length; i++) {
+        const sMin_i = timeToMinutes(itemsToCheck[i].st);
+        const eMin_i = timeToMinutes(itemsToCheck[i].et);
+        for (let j = i + 1; j < itemsToCheck.length; j++) {
+          if (itemsToCheck[i].date === itemsToCheck[j].date) {
+            const sMin_j = timeToMinutes(itemsToCheck[j].st);
+            const eMin_j = timeToMinutes(itemsToCheck[j].et);
+            if (sMin_i < eMin_j && eMin_i > sMin_j) {
+              conflictingItem = itemsToCheck[j];
+              timeErrorText = `ช่วงเวลาแถวที่ ${i + 1} และแถวที่ ${j + 1} ชนกันเอง (${itemsToCheck[i].date}: ${itemsToCheck[i].st}-${itemsToCheck[i].et} กับ ${itemsToCheck[j].st}-${itemsToCheck[j].et})`;
+              break;
+            }
+          }
+        }
+        if (timeErrorText) break;
+      }
+
       const allBookings = (appData.bookings || []).concat(overviewBookings || []);
 
       for (let i = 0; i < itemsToCheck.length; i++) {
@@ -5737,7 +5822,16 @@
       }
 
       const mbEmpInput = document.getElementById('mbFormEmpId');
-      const mbEmpVal = mbEmpInput && mbEmpInput.value ? mbEmpInput.value.trim().padStart(6, '0') : '000000';
+      let mbEmpVal = mbEmpInput && mbEmpInput.value ? mbEmpInput.value.trim().padStart(6, '0') : '';
+      if (!mbEmpVal || mbEmpVal === '000000') {
+        const typed = (document.getElementById('mbFormBookedBy')?.value || '').trim();
+        const found = (appEmployeesList || []).find(e => e.emp_id === typed.padStart(6, '0') || e.full_name === typed || `${e.prefix || ''}${e.first_name} ${e.last_name}`.trim() === typed);
+        if (found) {
+          mbEmpVal = found.emp_id;
+        } else {
+          mbEmpVal = mbEmpVal || '000000';
+        }
+      }
       const payload = {
         roomName: roomName,
         items: items,
